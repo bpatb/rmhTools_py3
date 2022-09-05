@@ -1,5 +1,7 @@
 
 
+from __future__ import absolute_import
+from importlib import reload
 try:
     from PySide2.QtGui import *
     from PySide2.QtCore import *

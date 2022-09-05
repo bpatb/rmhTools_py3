@@ -1,5 +1,10 @@
 
 
+from __future__ import absolute_import
+from __future__ import print_function
+from importlib import reload
+from six.moves import map
+from six.moves import range
 try:
     from PySide2.QtGui import *
     from PySide2.QtCore import *
@@ -190,7 +195,7 @@ def distributeAlongCurve(srcObjs = None, destObjs = None, randomDist = False, fo
             outObjs.append(dup)
         grp = mc.group(em = True, n = '%s_dups'%destObj)
         mc.parent(outObjs, grp)
-        mc.delete(mpDict.values())
+        mc.delete(list(mpDict.values()))
         mpDict = {}
         mc.select(srcObjs)
         mc.move(0,0,0)
@@ -199,10 +204,10 @@ def distributeAlongCurve(srcObjs = None, destObjs = None, randomDist = False, fo
     
     if not stayAttached:
         mc.refresh()
-        mc.delete(mpDict.values())
+        mc.delete(list(mpDict.values()))
         mpDict = {}
     mc.undoInfo(cck = True)
-    return {'roots': out_groups, 'dups': out, 'mpaths':mpDict.values()}
+    return {'roots': out_groups, 'dups': out, 'mpaths':list(mpDict.values())}
     
 
 def successiveKeyOffset(objs = None, frameRange = None, timeOffset = 0, offsetDeltaRange = None, shuffleArray = False, hierarchy = True):
@@ -218,13 +223,13 @@ def successiveKeyOffset(objs = None, frameRange = None, timeOffset = 0, offsetDe
         result = mc.promptDialog(title='successiveKeyOffset',message='offsetDeltaRange:',button=['OK', 'Cancel'], defaultButton='OK',cancelButton='Cancel', dismissString='Cancel', text = '5,5')
         if result == 'OK':
             tx = mc.promptDialog(query=True, text=True)
-            offsetDeltaRange = map(float, tx.split(','))
+            offsetDeltaRange = list(map(float, tx.split(',')))
         else:
             return
         
     if not frameRange:
         aPlayBackSliderPython = mel.eval('$tmpVar=$gPlayBackSlider')
-        frameRange = map(int, mc.timeControl(aPlayBackSliderPython, ra = True, q = True))
+        frameRange = list(map(int, mc.timeControl(aPlayBackSliderPython, ra = True, q = True)))
         if not frameRange or abs(frameRange[0] - frameRange[1])<=2:
             # mc.error('bakeTransferValues: keine Range selected')
             # return
@@ -287,7 +292,7 @@ def reconnectTransformToConstraints(objs = None):
             # mc.connectAttr('%s.rotateOrder'%obj, '%s.constraintRotateOrder'%const, f = 1)
             # mc.connectAttr('%s.rotatePivot'%obj, '%s.constraintRotatePivot'%const, f = 1)
             # mc.connectAttr('%s.rotatePivotTranslate'%obj, '%s.constraintRotateTranslate'%const, f = 1)
-            print 'con ', const, 'to', obj
+            print('con ', const, 'to', obj)
             
             
 
@@ -298,7 +303,7 @@ def rmh_exportNukeAssets_createExportSets():
     for s in setNames:
         if not mc.objExists(s):
             mc.sets(name = s, em = True)
-            print '%s created'%s
+            print('%s created'%s)
 
 def rmh_exportNukeAssets_addToSet(exportSetName = None):
     if not exportSetName:
@@ -312,7 +317,7 @@ def rmh_exportNukeAssets_addToSet(exportSetName = None):
     for obj in sel:
         mc.sets(obj, addElement = exportSetName, e = True)
     mc.undoInfo(cck = True)
-    print 'added to %s'%exportSetName
+    print('added to %s'%exportSetName)
     
 
 def rmh_exportNukeAssets(frameRange = None):
@@ -338,7 +343,7 @@ def rmh_exportNukeAssets(frameRange = None):
             outPath = os.path.join(outDir, outFile)
             mc.select(obj)
             mc.file(outPath, force = 1, options = "" ,typ = "FBX export" ,pr=1 ,es = 1 )
-            print 'toNuke ------ > %s exported'%outPath
+            print('toNuke ------ > %s exported'%outPath)
             
     cameras = mc.ls(type = 'camera')
     cameras_t = [mc.listRelatives(c, p = 1)[0] for c in cameras if mc.getAttr('%s.renderable'%c)]
@@ -350,7 +355,7 @@ def rmh_exportNukeAssets(frameRange = None):
         outPath = os.path.join(outDir, outFile)
         mc.select(obj)
         mc.file(outPath, force = 1, options = "" ,typ = "FBX export" ,pr=1 ,es = 1 )
-        print 'toNuke ------ > %s exported'%outPath
+        print('toNuke ------ > %s exported'%outPath)
     
     ######## nuke abc
     setName = 'nukeSet_alembic'
@@ -365,9 +370,9 @@ def rmh_exportNukeAssets(frameRange = None):
                 rootTx = rootTx + ' -root ' + obj
                 
             command = '-frameRange %d %d -worldSpace -writeVisibility -dataFormat ogawa'%(frameRange[0],frameRange[1]) + rootTx  + ' -file \"' + outPath.replace('\\','/') + '\"'
-            print objs, command
+            print(objs, command)
             mc.AbcExport(j = command)
-            print 'toNuke ------ > %s exported'%outPath
+            print('toNuke ------ > %s exported'%outPath)
 
 def rmh_copyObjectPosToNuke(obj = None):
     if not obj:
@@ -388,7 +393,7 @@ def rmh_copyObjectPosToNuke(obj = None):
     ' ypos -245',\
     '}',\
     
-    print '\n'.join(nukeTx)
+    print('\n'.join(nukeTx))
     cb = QApplication.clipboard()
     cb.clear(mode=cb.Clipboard)
     cb.setText('\n'.join(nukeTx), mode=cb.Clipboard)
@@ -464,7 +469,7 @@ def rmh_exportWorldspaceKeyframesToAFX(obj = None, frameRange = None, fps = 25):
     '\n'.join(valLines),\
     'End of Keyframe Data'
     
-    print '\n'.join(afxTx)
+    print('\n'.join(afxTx))
     cb = QApplication.clipboard()
     cb.clear(mode=cb.Clipboard)
     cb.setText('\n'.join(afxTx), mode=cb.Clipboard)
@@ -489,5 +494,4 @@ def attachCubesToObjects(objs = None, cSize = 1): #weil nuke keine locator impor
     mc.undoInfo(cck = True)
     
     return out
-        
         

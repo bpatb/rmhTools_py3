@@ -1,5 +1,8 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os, subprocess, threading, math, random,shutil
+from importlib import reload
 import __main__
 
 try:
@@ -27,6 +30,7 @@ import rmhVaillantTools as vai
 import rmhBundeswehrTools as rmhBW
 import vai_assignCommonMaterial as acm
 import rmhRealtimeTools as rrt
+import rmhRobotTools
 
 reload(pw)
 reload(vai)
@@ -56,7 +60,7 @@ class VaillantTab(QWidget):
         self.setLayout(mainLayout)
     
     def testProc(self):
-        print ' pass'
+        print(' pass')
     
 
 class RmhTools(MayaQWidgetDockableMixin, QDialog):
@@ -93,6 +97,9 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
         roentgenLayout = pw.createButtonList([['Bake Keys...', self.showBakeSimulationOptions],['Reconnect Transforms to Constraints', rmm.reconnectTransformToConstraints]], \
                                             label = 'Roentgen', cols = 1, spacing = 2)
         
+        roboLayout = pw.createButtonList([['connect faceCap Data', self.robo_connectToFaceCapData],['matchCurveShape', rmhRobotTools.matchCurveShape]], \
+                                            label = 'OneMessage Robo', cols = 1, spacing = 2)
+        
         # exportSetButtons = pw.createButtonList([['create set', rrt.rmh_createExportSet],['add to set', rrt.rmh_addToExportSet]], \
         #                                     label = 'Export Set', cols = 2, spacing= 2)   
         
@@ -103,7 +110,7 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
         # 
         # bencardLayout = pw.makeBoxLayout([nukeButtons,QWidget()],stretchArray = [0,1], alsWidget = True)
         
-        projectsLayout = pw.makeBoxLayout([bwFachButtons, nukeButtons,afxButtons, roentgenLayout, QWidget()],stretchArray = [0,0,0,0,1], alsWidget = True)
+        projectsLayout = pw.makeBoxLayout([bwFachButtons, nukeButtons,afxButtons, roentgenLayout, roboLayout, QWidget()],stretchArray = [0,0,0,0,0,1], alsWidget = True)
         
         ############# mainTab
         self.mainTab = QTabWidget()
@@ -142,6 +149,10 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
     def exportToGLB(self):
         mel.eval('select -hi;toBabylon')
     
+    def robo_connectToFaceCapData(self):
+        reload(rmhRobotTools)
+        rmhRobotTools.connectToFaceCapData()
+        
     def gameExporter_setAll(self):
         sceneName = mc.file( q = True, sn = True, shn = True).split('.')[0]
         if not sceneName:
@@ -207,7 +218,7 @@ def showRmhToolsDialog():
         app = QApplication.instance()
         
         ptr = apiUI.MQtUtil.mainWindow()
-        win = wrapInstance(long(ptr), QWidget)
+        win = wrapInstance(int(ptr), QWidget)
         
         return win
     mayaWin = getMainWindow()

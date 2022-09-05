@@ -1,5 +1,10 @@
 # import os, subprocess, threading, math, random,re,shutil
+from __future__ import absolute_import
 import os, subprocess, threading, math, random,shutil
+from six.moves import map
+import six
+from importlib import reload
+from six.moves import range
 
 try:
     from PySide2.QtGui import *
@@ -108,7 +113,7 @@ def makeBoxLayout(widgetArray, vertical = True, alsWidget = False, margin = None
         return layout
 
 def splitPath(path, ohnePunkt = True): #dirName, fName, base, ext
-    path = unicode(path).replace('\\','/').replace('//','/')
+    path = six.text_type(path).replace('\\','/').replace('//','/')
     fName = path.split('/')[-1]
     dirName = os.path.dirname(path).replace('\\','/').replace('//','/')
     base, ext = os.path.splitext(fName)
@@ -208,7 +213,7 @@ class FloatLabelSpin(QWidget):
         self.spin.setValue(spinVal)
 
 class MediaListWidget(QListWidget):
-    pathChange = pyqtSignal(unicode)
+    pathChange = pyqtSignal(six.text_type)
     def __init__(self, exts = None, parent = None):
         super(MediaListWidget, self).__init__(parent)
         self.exts = exts or ['*.jpg','*.jpeg','*.avi','*.png','*.3gp','*.bmp'] 
@@ -291,7 +296,7 @@ class MediaListWidget(QListWidget):
     def loadDir(self, dir):
         exts = self.exts
         dir = str(dir).replace('\\','/')
-        files = map(str, QDir(dir).entryList(exts, QDir.Files | QDir.NoSymLinks))
+        files = list(map(str, QDir(dir).entryList(exts, QDir.Files | QDir.NoSymLinks)))
         self.clear()
         
         for file in files:
@@ -350,7 +355,7 @@ class MediaListWidget(QListWidget):
         return False
         
 class DirListWidget(QListWidget):
-    pathChange = pyqtSignal(unicode)
+    pathChange = pyqtSignal(six.text_type)
     def __init__(self, exts = None, parent = None):
         super(DirListWidget, self).__init__(parent)
         self.exts = exts or ['*.jpg','*.jpeg','*.avi','*.png','*.3gp','*.bmp']
@@ -434,7 +439,7 @@ class DirListWidget(QListWidget):
     def loadDir(self, metaDir, append = False):
         exts = self.exts
         metaDir = str(metaDir).replace('\\','/')
-        dirs = map(str, QDir(metaDir).entryList(['*'], QDir.Dirs | QDir.NoSymLinks | QDir.NoDot | QDir.NoDotDot))
+        dirs = list(map(str, QDir(metaDir).entryList(['*'], QDir.Dirs | QDir.NoSymLinks | QDir.NoDot | QDir.NoDotDot)))
         if not append:
             self.clear()
         

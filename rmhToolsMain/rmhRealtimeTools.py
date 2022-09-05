@@ -1,6 +1,9 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import maya.cmds as mc
 import maya.mel as mel
 import random, os, pickle, subprocess, __main__, shutil
+from importlib import reload
 
 try:
     from PySide2.QtGui import *
@@ -64,7 +67,7 @@ def subs_importSubstanceTextures_PBS(texFolder = None):
         fullPath = os.path.join(texFolder, imgName).replace('\\', '/')
         spl = base.split('_')
         if len(spl) < 2:
-            print 'file %s too short after _ split'%imgName
+            print('file %s too short after _ split'%imgName)
             continue
         
         
@@ -81,9 +84,9 @@ def subs_importSubstanceTextures_PBS(texFolder = None):
         channelMapping = {'BaseColor':'TEX_color_map','Metallic':'TEX_metallic_map','Normal':'TEX_normal_map','Roughness':'TEX_roughness_map', 'Emission':'TEX_emissive_map', 'AO':'TEX_ao_map'}
         channelMapping_bool = {'BaseColor':'use_color_map','Metallic':'use_metallic_map','Normal':'use_normal_map','Roughness':'use_roughness_map', 'Emission':'use_emissive_map', 'AO':'use_ao_map'}
         
-        if channelMapping.has_key(channelName):
+        if channelName in channelMapping:
             createFileNodeAndConnect(name = '%s_%s_f'%(matName, channelName), imgPath = fullPath, destPlug = '%s.%s'%(matName, channelMapping[channelName]))
-            if channelMapping_bool.has_key(channelName):
+            if channelName in channelMapping_bool:
                 mc.setAttr('%s.%s'%(matName, channelMapping_bool[channelName]), True)
 
 
@@ -181,7 +184,7 @@ def exportToUnity(outPath = None):
     
     mc.editRenderLayerGlobals( currentRenderLayer='defaultRenderLayer' )
     mc.delete(tempRL)
-    print fbxPath
+    print(fbxPath)
     
 def rmh_getAssetDir():
     sceneName = mc.file( q = True, sn = True, shn = True).split('.')[0]
@@ -204,7 +207,7 @@ def rmh_getAssetDir():
         if res == 'Cancel':
             return
         os.makedirs(assetDir)
-    print assetDir
+    print(assetDir)
     return assetDir, sceneBase
     
 def rmh_createExportSet():
@@ -212,7 +215,7 @@ def rmh_createExportSet():
     for s in setNames:
         if not mc.objExists(s):
             mc.sets(name = s, em = True)
-            print '%s created'%s
+            print('%s created'%s)
 
 def rmh_addToExportSet():
     rmh_createExportSet()
@@ -221,7 +224,7 @@ def rmh_addToExportSet():
     for obj in sel:
         mc.sets(obj, addElement = exportSetName, e = True)
     mc.undoInfo(cck = True)
-    print 'added to %s'%exportSetName
+    print('added to %s'%exportSetName)
     
 
 def rmh_gotoAssetExportFolder():
@@ -290,5 +293,5 @@ def rmh_copyToUnityFolder(unityDir = None):
     destPath = os.path.join(unityDir, sceneBase+'.fbx')
     
     shutil.copy2(sourcePath, destPath)
-    print 'copied from', sourcePath, 'to', destPath
+    print('copied from', sourcePath, 'to', destPath)
     

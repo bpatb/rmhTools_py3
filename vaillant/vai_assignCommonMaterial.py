@@ -1,6 +1,9 @@
 #### Assign common material - Patrick B 22.09.13, RMH
 
+from __future__ import absolute_import
+from __future__ import print_function
 import maya.cmds as mc
+from importlib import reload
 import rmhTools_widgets as pw
 try:
     from PySide2.QtGui import *
@@ -58,7 +61,7 @@ def getShadingGroup(obj = None, select = False):
         return sg
     elif 'vray' in mc.objectType(obj).lower() or 'lambert' in mc.objectType(obj).lower() or 'blinn' in mc.objectType(obj).lower():
         sg = mc.listConnections(obj, type = 'shadingEngine')
-        print obj
+        print(obj)
         return sg if not type(sg) == list else sg[0] 
     
 
@@ -95,7 +98,7 @@ def assignCommonShader_xray():
     ok = dialog.exec_()#QInputDialog.getItem(None, 'welches Material?', '', sgNames, current = 0, editable = False)
     if ok:
         sgName, allCheck = dialog.getVals()
-        print sgData[sgName], 'wird zugewiesen...'
+        print(sgData[sgName], 'wird zugewiesen...')
     else:
         return
     sg = sgData[sgName]
@@ -112,7 +115,7 @@ def assignCommonShader_xray():
         for current_sg in selected_sgs:
             objs = getObjects_SG(current_sg)
             if not objs:
-                print 'nein', current_sg
+                print('nein', current_sg)
                 continue
             all_sg_objs  = list(set(all_sg_objs + objs))
         assignSG(sg, all_sg_objs)
@@ -122,7 +125,7 @@ def assignCommonShader_set(setName = 'commonMaterialSet'):
     sgNames, sgObjects = [],[]
     for mat in mats:
         if not ('vray' in mc.objectType(mat).lower() or  'lambert' in mc.objectType(mat).lower() or 'blinn' in mc.objectType(mat).lower()):
-            print 'nein:', mat , mc.objectType(mat)
+            print('nein:', mat , mc.objectType(mat))
             continue
         if 'commonName' in mc.listAttr(mat):
             name = mc.getAttr('%s.commonName')
@@ -139,9 +142,9 @@ def assignCommonShader_set(setName = 'commonMaterialSet'):
     if ok:
         sgName, allCheck = dialog.getVals()
         idx = sgNames.index(sgName)
-        print sgObjects[idx], 'wird zugewiesen...'
+        print(sgObjects[idx], 'wird zugewiesen...')
         if idx in [None, False]:
-            print 'fehler', idx , sgObjects
+            print('fehler', idx , sgObjects)
             return
     else:
         return
@@ -154,7 +157,7 @@ def assignCommonShader_set(setName = 'commonMaterialSet'):
         for current_sg in selected_sgs:
             objs = getObjects_SG(current_sg)
             if not objs:
-                print 'nein', current_sg
+                print('nein', current_sg)
                 continue
             all_sg_objs  = list(set(all_sg_objs + objs))
         assignSG(sg, all_sg_objs)

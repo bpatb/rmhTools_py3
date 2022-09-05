@@ -1,10 +1,14 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import maya.cmds as mc
 import maya.mel as mel
 
+from importlib import reload
 import random, pickle, os
 import __main__
 
 import rmhTools_widgets as pw
+import six
 
 try:
     from PySide2.QtGui import *
@@ -21,7 +25,7 @@ except:
 def returnMeshesInHierarchy(grps = None, select = False):
     if not grps:
         grps = mc.ls(sl = True)
-    grps = [grps] if type(grps) in [str,unicode] else grps
+    grps = [grps] if type(grps) in [str,six.text_type] else grps
     mc.undoInfo(ock = True)
     out = []
     for grp in grps:
@@ -111,7 +115,7 @@ def copyShaderAssignment(objs = None):
     for obj in objs:
         dc[obj] = getShadingGroup(obj)
     __main__.tmp_csa_dict = dc
-    print dc
+    print(dc)
     return dc
     
 def pasteShaderAssignment():
@@ -147,7 +151,7 @@ def renameDuplicates():
             #rename, adding '#' as the suffix, which tells maya to find the next available number
             try:
                 newname = mc.rename(name, (stripSuffix + "#")) 
-                print "renamed %s to %s" % (name, newname)
+                print("renamed %s to %s" % (name, newname))
             except:
                 pass
              

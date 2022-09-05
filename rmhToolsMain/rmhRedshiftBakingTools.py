@@ -1,5 +1,9 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 try:
     from PySide2.QtGui import *
+from importlib import reload
     from PySide2.QtCore import *
     from PySide2.QtWidgets import *
     from shiboken2 import wrapInstance
@@ -63,7 +67,7 @@ def RS_assignRedshiftBakeSet(name = None, resolution = None, addSel = True):
         # else:
         #     return
     if mc.objExists(name):
-        print name, 'exists'
+        print(name, 'exists')
         # mc.select(name)
     else:
         mc.createNode('RedshiftBakeSet', n = name)
@@ -136,7 +140,7 @@ def RS_bakeRedshiftSet(rsSets = None, assignOrig = True, assignBaked = True):
     allObjs=  [] 
     for bakeSet in rsSets:
         objs = mc.listConnections(bakeSet+'.dagSetMembers') if mc.listConnections(bakeSet+'.dagSetMembers') else []
-        print 'baking', bakeSet, '...'
+        print('baking', bakeSet, '...')
         if not objs:
             continue
         mc.displaySmoothness(objs, polygonObject = 1)
@@ -161,7 +165,7 @@ def RS_bakeRedshiftSet(rsSets = None, assignOrig = True, assignBaked = True):
         RS_setStandardMaterialValues(objs)
         allObjs = allObjs + objs
     if assignBaked:
-        print 'assigning baked materials...'
+        print('assigning baked materials...')
         opts = RS_getOptions()
         bakePath = opts.get('bakePath', None)
         RS_assignBakedTextures(allObjs, bakePath = bakePath, bakePath_dontAsk = True)
@@ -220,13 +224,13 @@ def RS_assignBakedTextures(objs = None, bakePath = None, bakePath_dontAsk = Fals
     RS_storeOptions({'bakePath':bakePath})
     
     ###### check files
-    print bakePath
+    print(bakePath)
     fileList = os.listdir(bakePath)
     # print fileList
     for obj in objs:
         shape = mc.listRelatives(obj, s = True)
         if not shape:#
-            print 'skip %s -> no shape'%obj
+            print('skip %s -> no shape'%obj)
             continue
         shape = shape[0]
         sg_current = pmm.getShadingGroup(obj, False)
@@ -271,7 +275,7 @@ def RS_assignBakedTextures(objs = None, bakePath = None, bakePath_dontAsk = Fals
                     if con:
                         pmm.assignSG(con[0], [obj])
                 
-                print matName, 'auf', obj, 'zugewiesen'
+                print(matName, 'auf', obj, 'zugewiesen')
                 continue
     mc.undoInfo(cck = True)
     
@@ -377,12 +381,12 @@ def RS_createExportGroup(objs = None):
     
     for obj in allTrans:
         sh = mc.listRelatives(obj, s = 1)
-        print sh
+        print(sh)
         if not sh or mc.objectType(sh[0]) != 'mesh':
             continue
         
         allSets = mc.polyUVSet(sh[0], allUVSets = True, q = True)
-        print obj, allSets
+        print(obj, allSets)
         if allSets:
             if not 'bakeSet' in allSets or len(allSets) == 1:
                 continue
@@ -583,7 +587,7 @@ class RS_BakingToolsDialog(QDialog):
     def loadBakingToolsPrefs(self):
         sceneName = mc.file( q = True, sn = True, shn = True).split('.')[0] if mc.file( q = True, sn = True, shn = True) else 'bakedScene'
         dc = RS_getOptions()
-        if 'outPath' in dc.keys() and type(dc['outPath']) == str:
+        if 'outPath' in list(dc.keys()) and type(dc['outPath']) == str:
             self.outPathLine.setText(dc['outPath'])
         else:
             self.updateOutPath()
@@ -603,7 +607,7 @@ class RS_BakingToolsDialog(QDialog):
     def assignBakedTextures(self):
         prefix = str(self.prefixLine.text())
         mats = pmm.assignBakedTextures(prefix = prefix)
-        print mats, 'yes!'
+        print(mats, 'yes!')
         pmm.replugMatInput(von = 'color', nach = 'incandescence',mats = mats)
     
     def unplugTranspareny(self):

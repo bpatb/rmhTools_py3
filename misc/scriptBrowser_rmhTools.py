@@ -1,6 +1,9 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import maya.cmds as mc
 import maya.OpenMaya as om
 
+from importlib import reload
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin, MayaQDockWidget
 import maya.api.OpenMayaUI  as omui
 
@@ -9,6 +12,8 @@ import random, os, math, pickle
 import __main__
 import sys
 from os import walk
+from six.moves import range
+from six.moves import zip
 
 try:
     from PySide2.QtGui import *
@@ -76,7 +81,7 @@ def analyzeFolders(folderPaths = [r'C:\_dbDataTmp\_projekte\09_drawWalk\03_mayaf
     #              r'C:\_dbDataTmp\_projekte\x_tmpProject\03_mayafiles\scripts',r'C:\_dbDataTmp\_projekte\expandedVFX\tutorials\03_mayafiles\scripts', r'C:\_dbDataTmp\_projekte\19_party\03_mayafiles\scripts', \
     #              r'C:\_dbDataTmp\_projekte\20_stutter\03_mayafiles\scripts']
     # 
-    print folderPaths
+    print(folderPaths)
     out = {}
     for folderPath in folderPaths:
         if not os.path.isdir(folderPath):
@@ -96,7 +101,7 @@ def analyzeFolders(folderPaths = [r'C:\_dbDataTmp\_projekte\09_drawWalk\03_mayaf
     return out
 
 def returnAllFunctions(pyFileDict, sort = True, returnOnlyNames = True, excludeList = ['add', 'sub', 'magnitude', 'normalize', 'multiply']):
-    allNames = pyFileDict.keys()
+    allNames = list(pyFileDict.keys())
     allNames.sort()
     
     out = []
@@ -125,7 +130,7 @@ def returnDuplicatesInList(inList):
     return found
 
 def returnFilesContainingFunction(pyFileDict, fct):
-    allNames = pyFileDict.keys()
+    allNames = list(pyFileDict.keys())
     allNames.sort()
     
     out = []
@@ -137,12 +142,12 @@ def returnFilesContainingFunction(pyFileDict, fct):
 
 def generateIncludeTextForAll(pyFileDict):
     if type(pyFileDict) == str:
-        print 'aha'
+        print('aha')
         pyFileDict = analyzeFile(pyFileDict)
-    if 'fileName' in pyFileDict.keys():
+    if 'fileName' in list(pyFileDict.keys()):
         pyFileDict = {pyFileDict['fileName']:pyFileDict}
-    print pyFileDict
-    allNames = pyFileDict.keys()
+    print(pyFileDict)
+    allNames = list(pyFileDict.keys())
     allNames.sort()
     
     out = []

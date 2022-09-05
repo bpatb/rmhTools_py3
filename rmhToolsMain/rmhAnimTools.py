@@ -1,6 +1,9 @@
+from __future__ import absolute_import
 import maya.cmds as mc
 import maya.mel as mel
 import random, os, pickle, subprocess, __main__, shutil
+from six.moves import range
+from importlib import reload
 
 try:
     from PySide2.QtGui import *

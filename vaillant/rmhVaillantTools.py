@@ -1,6 +1,9 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os, subprocess, threading, math, random,shutil
 import __main__
+from importlib import reload
 
 try:
     from PySide2.QtGui import *
@@ -91,7 +94,7 @@ def vai_importAllMaterials():
     for f in files:
         base = f.split('.')[0]
         if mc.objExists(base):
-            print '%s exists - skipping'%base
+            print('%s exists - skipping'%base)
             continue
         mc.file(matDir + '/' + f, i = True, ignoreVersion = True, ra = False, mergeNamespacesOnClash = False ,  options = "v=0;" , pr = True)
     
@@ -109,9 +112,9 @@ def vai_importAllMaterials():
             mc.parent(n, matNodeGrp)
     
     if newMats:
-        print 'imported:\n', '\n'.join(newMats)
+        print('imported:\n', '\n'.join(newMats))
     else:
-        print 'imported nothing.'
+        print('imported nothing.')
 
 def vai_importAllLights():
     fileDir = os.path.dirname(os.path.realpath(__file__))
@@ -125,7 +128,7 @@ def vai_importAllLights():
     for f in files:
         base = f.split('.')[0]
         if mc.objExists(base):
-            print '%s exists - skipping'%base
+            print('%s exists - skipping'%base)
             continue
         mc.file(matDir + '/' + f, i = True, ignoreVersion = True, ra = False, mergeNamespacesOnClash = False ,  options = "v=0;" , pr = True)
     
@@ -144,7 +147,7 @@ def vai_importMiscAssets():
     for f in files:
         base = f.split('.')[0]
         if mc.objExists(base):
-            print '%s exists - skipping'%base
+            print('%s exists - skipping'%base)
             continue
         mc.file(matDir + '/' + f, i = True, ignoreVersion = True, ra = False, mergeNamespacesOnClash = False ,  options = "v=0;" , pr = True)
     
@@ -331,7 +334,7 @@ def vai_createRLPasses():
     
     mc.editRenderLayerGlobals(crl='defaultRenderLayer')
     
-    print 'RLs created'
+    print('RLs created')
 
 
 def vai_initialize(name = None):
@@ -345,7 +348,7 @@ def vai_initialize(name = None):
             #alle obj gruppieren in deviceName_geraet_grp
             allObjs = mc.ls(v=True, assemblies=True)
             grp = mc.group(allObjs, n=str(deviceName)+masterGroupPostfix)
-            print 'GROUP: ',grp
+            print('GROUP: ',grp)
             mc.select(grp, r=True)
     
     if not mc.ls(v=True, assemblies=True):
@@ -359,25 +362,25 @@ def vai_initialize(name = None):
         else:
             return
     
-    print 'setting up group ...'
+    print('setting up group ...')
     makeInitGroup(name)
-    print 'done.'
+    print('done.')
     
-    print 'setting up renderer ...'
+    print('setting up renderer ...')
     vai_setupRenderer()
-    print 'done.'
+    print('done.')
     
-    print 'import all materials ...'
+    print('import all materials ...')
     vai_importAllMaterials()
-    print 'done.'
+    print('done.')
     
-    print 'import all lights ...'
+    print('import all lights ...')
     vai_importAllLights()
-    print 'done.'
+    print('done.')
     
-    print 'import the rest ...'
+    print('import the rest ...')
     vai_importMiscAssets()
-    print 'done.'
+    print('done.')
     
 
 def vai_selectNonRedshiftMaterials():
