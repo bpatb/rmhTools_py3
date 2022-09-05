@@ -1,0 +1,12 @@
+1. overwrite userSetup.py in "maya/scripts" folder (or add to the code) // restart Maya
+2. run the following python code in the Maya script editor or via shelf button:
+
+import rmhTools
+reload (rmhTools)
+rmhTools.showRmhToolsDialog()
+
+
+Info for use with Maya 2022+: You need to switch back to Python 2 (standard is Python 3)
+https://matiascodesal.com/blog/how-to-launch-maya-2022-with-python-2-if-you-are-not-ready-for-python-3/
+
+
