@@ -97,7 +97,8 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
         roentgenLayout = pw.createButtonList([['Bake Keys...', self.showBakeSimulationOptions],['Reconnect Transforms to Constraints', rmm.reconnectTransformToConstraints]], \
                                             label = 'Roentgen', cols = 1, spacing = 2)
         
-        roboLayout = pw.createButtonList([['connect faceCap Data', self.robo_connectToFaceCapData],['matchCurveShape', rmhRobotTools.matchCurveShape]], \
+        roboLayout = pw.createButtonList([['import faceCap fbx and sound', rmhRobotTools.rmhRobo_importFbxAndSound],['connect faceCap Data', self.robo_connectToFaceCapData],\
+                                        ['matchCurveShape', rmhRobotTools.matchCurveShape]], \
                                             label = 'OneMessage Robo', cols = 1, spacing = 2)
         
         # exportSetButtons = pw.createButtonList([['create set', rrt.rmh_createExportSet],['add to set', rrt.rmh_addToExportSet]], \
@@ -151,7 +152,7 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
     
     def robo_connectToFaceCapData(self):
         reload(rmhRobotTools)
-        rmhRobotTools.connectToFaceCapData()
+        rmhRobotTools.rmhRobo_connectToFaceCapData()
         
     def gameExporter_setAll(self):
         sceneName = mc.file( q = True, sn = True, shn = True).split('.')[0]
