@@ -65,9 +65,10 @@ def rmhRobo_connectToFaceCapData(sourceBlendShape = 'shapes', targetBlendShapes 
             for i,ch in enumerate(['R','G','B']):
                 mc.setAttr('%s.overrideColor%s'%(sh,ch), col[i]/ 255.0)
             
-            for attr in ['transOffsetX','transOffsetY','transOffsetZ']:
+            stdVals = {'eyeMultX':0.3, 'eyeMultY':0.1}
+            for attr in ['eyeMultX', 'eyeMultY', 'transOffsetX','transOffsetY','transOffsetZ']:
                 if not attr in mc.listAttr(ctrl):
-                    mc.addAttr(ctrl, ln = attr, at = 'double', k = 1)
+                    mc.addAttr(ctrl, ln = attr, at = 'double', k = 1,dv = stdVals.get(attr, 0))
             for attr in ['rotateOffsetX','rotateOffsetY','rotateOffsetZ']:
                 if not attr in mc.listAttr(ctrl):
                     mc.addAttr(ctrl, ln = attr, at = 'doubleAngle', k = 1)
@@ -90,6 +91,7 @@ def rmhRobo_connectToFaceCapData(sourceBlendShape = 'shapes', targetBlendShapes 
     # attrList_source = mc.aliasAttr(sourceBlendShape, q = True)
     attrList_source = mel.eval('aliasAttr -q %s'%sourceBlendShape)
     attrList_source = [a for a in attrList_source if a and not '[' in a]
+    
     
     mc.undoInfo(ock = True)
     
@@ -116,6 +118,25 @@ def rmhRobo_connectToFaceCapData(sourceBlendShape = 'shapes', targetBlendShapes 
     # mc.connectAttr('%s.%s'%(headSourceTrans,attr),'%s.%s'%(headDestTrans,attr), f = 1)
     # for attr in ['translate', 'rotate']:
     #     mc.connectAttr('%s.%s'%(headSourceTrans,attr),'%s.%s'%(headDestTrans,attr), f = 1)
+    
+    ########## connect eyes
+    
+    
+    sourceEyeTransL = searchObjectsInNamespaces(['grp_eyeLeft'], 'transform')[0]
+    sourceEyeTransR = searchObjectsInNamespaces(['grp_eyeRight'], 'transform')[0]
+    
+    destEyeTransL = searchObjectsInNamespaces(['eyeL_moveCtrl_bind'], 'transform')[0]
+    destEyeTransR = searchObjectsInNamespaces(['eyeR_moveCtrl_bind'], 'transform')[0]
+    
+    mdiv = mc.createNode('multiplyDivide',n = '%s_eyeMdiv'%offCtrl)
+    mc.connectAttr('%s.eyeMultX'%offCtrl, '%s.input1.input1X'%(mdiv), f = 1)
+    mc.connectAttr('%s.eyeMultY'%offCtrl, '%s.input1.input1Y'%(mdiv), f = 1)
+    mc.connectAttr('%s.rotateY'%sourceEyeTransL, '%s.input2.input2X'%(mdiv), f = 1)
+    mc.connectAttr('%s.rotateX'%sourceEyeTransR, '%s.input2.input2Y'%(mdiv), f = 1)
+    mc.connectAttr('%s.outputX'%mdiv, '%s.translateX'%destEyeTransL, f = 1)
+    mc.connectAttr('%s.outputY'%mdiv, '%s.translateY'%destEyeTransL, f = 1)
+    mc.connectAttr('%s.outputX'%mdiv, '%s.translateX'%destEyeTransR, f = 1)
+    mc.connectAttr('%s.outputY'%mdiv, '%s.translateY'%destEyeTransR, f = 1)
     
     ####### connect blendshape attrs
     
