@@ -31,7 +31,7 @@ import rmhBundeswehrTools as rmhBW
 import vai_assignCommonMaterial as acm
 import rmhRealtimeTools as rrt
 import rmhRobotTools
-
+reload(rmhRobotTools)
 reload(pw)
 reload(vai)
 reload(acm)
