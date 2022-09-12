@@ -44,7 +44,6 @@ class VaillantTab(QWidget):
         
         initContextMenu = [['step 01: Setup Renderer',vai.vai_setupRenderer],['step 02: Import All Materials',vai.vai_importAllMaterials],['step 03: Import All Lights',vai.vai_importAllLights],['step 04: Import Camera',vai.vai_importMiscAssets]]
         
-        
         self.initLayout = pw.createButtonList([['initialize scene\n(right click for individual steps)', vai.vai_initialize, initContextMenu]], label = '01. Initialize', cols = 1)
         
         self.DL_Layout = pw.createButtonList([['Tech Inside', vai.vai_tecInsideDL],['Casing', vai.vai_casingDL],\
@@ -54,8 +53,9 @@ class VaillantTab(QWidget):
         
         self.renderSetup_layout = pw.createButtonList([['create RLs and passes', vai.vai_createRLPasses]], label = '04. Render Setup', cols = 1)
         
+        self.render_layout = pw.createButtonList([['render res.: switchWidthAndHeight', vai.vai_switchWidthAndHeight]], label = '05 Render', cols = 1)
         
-        mainLayout = pw.makeBoxLayout([self.initLayout,self.DL_Layout,self.tools_layout,self.renderSetup_layout, QWidget()], stretchArray = [0,0,0,0,1])
+        mainLayout = pw.makeBoxLayout([self.initLayout,self.DL_Layout,self.tools_layout,self.renderSetup_layout, self.render_layout, QWidget()], stretchArray = [0,0,0,0,0,1])
         
         self.setLayout(mainLayout)
     

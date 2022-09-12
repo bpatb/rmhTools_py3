@@ -61,20 +61,31 @@ licht_setup_acryl_brandshield = 'licht_setup_acryl_brandshield'
 def vai_error(message):
     mc.confirmDialog(title='vaillant tools',message=message,button=['Fine.'], defaultButton='Fine.')
     
-def vai_setupRenderer():
+def vai_setupRenderer(w = 4252, h = 4252):
     # fixMayaRenderGlobals()
     if not mc.objExists('redshiftOptions'):
         mc.createNode('redshiftOptions')
+    
     mc.setAttr('redshiftOptions.imageFormat', 1)
     mc.setAttr('redshiftOptions.exrForceMultilayer', 1)
     mc.setAttr('defaultRenderGlobals.imageFilePrefix', '<Scene>/<Scene>_<RenderLayer>', type = 'string')
-    mc.setAttr('defaultResolution.width', 4252)
-    mc.setAttr('defaultResolution.height', 5669)
+    mc.setAttr('defaultResolution.width', w)
+    mc.setAttr('defaultResolution.height', h)
     mc.setAttr('defaultResolution.pixelAspect', 1)
+    mc.setAttr('defaultResolution.deviceAspectRatio', float(w) / h)
     try:
         mel.eval('setTestResolutionVar(3);')
     except:
         pass
+
+def vai_switchWidthAndHeight():
+    w,h = mc.getAttr('defaultResolution.width'), mc.getAttr('defaultResolution.height')
+    w,h = h,w
+    mc.setAttr('defaultResolution.width', w)
+    mc.setAttr('defaultResolution.height', h)
+    mc.setAttr('defaultResolution.deviceAspectRatio', float(w) / h)
+    
+    
 def vai_importAllMaterials():
     # if len(mc.fileInfo('vai_materialsImported', q=True)) != 0:
     #     mc.warning('vai_importAllMaterials already executed...')
