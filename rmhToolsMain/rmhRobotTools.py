@@ -169,7 +169,7 @@ def rmhRobo_connectToFaceCapData(sourceBlendShape = 'shapes', targetBlendShapes 
                 print('connected:', '%s.%s'%(sourceBlendShape, attr), ' to ', '%s.%s'%(bs, attr))
     mc.undoInfo(cck = True)
     
-def rmhRobo_importFbxAndSound(fbxPath = None):
+def rmhRobo_importFbxAndSound(fbxPath = None, connect = True):
     if not fbxPath:
         fbxPath = mc.fileDialog2(fm = 1, cap = 'RMH Robo: select faceCap fbx file (sound will be added if samename.wav in same directory)')
         if not fbxPath:
@@ -188,7 +188,55 @@ def rmhRobo_importFbxAndSound(fbxPath = None):
         mc.playbackOptions(ps = 1)
     # file -import -type "audio"  -ignoreVersion -mergeNamespacesOnClash false -rpr "FC_2022_9_5_16_59_47_p3" -options "o=0"  -pr "%s";
 
+    if connect:
+        rmhRobo_connectToFaceCapData()
+
+def rmhRobo_importRobot():
+    roboPath = None
+    roboPaths = [r'Y:\RMH\OneMessage_Helper\04_Maya\assets\robot_for_tracking.mb']
+    for pth in roboPaths:
+        if os.path.isfile(pth):
+            roboPath = pth
+            break
+    if not roboPath:
+        res = mc.confirmDialog( title='rmhRobo_importRobot', message='robo file robot_for_tracking.mb not found please tell me where to look', button=['Ok', 'Cancel'], defaultButton='Yes', cancelButton='Cancel', dismissString='Cancel' )
+        if res == 'Cancel':
+            return
+        roboPath = mc.fileDialog2(fm = 1, cap = 'rmhRobo_importRobot: choose robot file')
+        if not roboPath:
+            return
+        roboPath = roboPath[0]
         
+    mc.file(roboPath, r = True, ignoreVersion=1,gl =1, mergeNamespacesOnClash = False,  namespace = "robo")
+    
+    print('robot imported')
+    
+def rmhRobo_importEnvironment():
+    envPath = None
+    envPaths = [r'Y:\RMH\OneMessage_Helper\04_Maya\assets\robot_environment.mb']
+    for pth in envPaths:
+        if os.path.isfile(pth):
+            envPath = pth
+            break
+    if not envPath:
+        res = mc.confirmDialog( title='rmhRobo_importEnvironment', message='environment file robot_environment.mb not found - please tell me where to look', button=['Ok', 'Cancel'], defaultButton='Yes', cancelButton='Cancel', dismissString='Cancel' )
+        if res == 'Cancel':
+            return
+        envPath = mc.fileDialog2(fm = 1, cap = 'rmhRobo_importEnvironment: choose environment file')
+        if not roboPath:
+            return
+        envPath = envPath[0]
+        
+    mc.file(envPath, r = True, ignoreVersion=1,gl =1, mergeNamespacesOnClash = False,  namespace = "roboEnv")
+
+    print('robot environment imported')
+    
+def rmhRobo_importAssetsAndSetupRendering():
+    rmhRobo_importRobot()
+    rmhRobo_importEnvironment()
+    rmhRobo_importFbxAndSound()
+    
+    
 def matchCurveShape(srcCrv = None, destCrv = None):
     if not srcCrv or not destCrv:
         srcCrv , destCrv = mc.ls(sl = True)[:2]
