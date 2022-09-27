@@ -61,7 +61,7 @@ licht_setup_acryl_brandshield = 'licht_setup_acryl_brandshield'
 def vai_error(message):
     mc.confirmDialog(title='vaillant tools',message=message,button=['Fine.'], defaultButton='Fine.')
     
-def vai_setupRenderer(w = 4252, h = 4252):
+def vai_setupRenderer(w = 4252, h = 5669):
     # fixMayaRenderGlobals()
     if not mc.objExists('redshiftOptions'):
         mc.createNode('redshiftOptions')
@@ -396,4 +396,57 @@ def vai_initialize(name = None):
 
 def vai_selectNonRedshiftMaterials():
     pass
+
+def vai_selectByArea(objs = None, minVal = None, maxVal = None):
+    if not objs:
+        objs = mc.ls(type = 'transform')
+    if not minVal or not maxVal:
+        rid = RangeInputDialog('Select By Area', 'Selektiere die groesste Flaeche im Bereich von...')
+        ok = rid.exec_()
+        if not ok:
+            return
+        minVal, maxVal = rid.getVals()
+    out= []
+    for obj in objs:
+        bb = mc.xform(obj, q = True, bb= True)
+        w,h,d = abs(bb[0]-bb[3]),abs(bb[1]-bb[4]),abs(bb[2]-bb[5])
+        sortBB = [w,h,d]
+        sortBB.sort(reverse = True)
+        area = sortBB[0] * sortBB[1]
+        if area > minVal and area < maxVal:
+            out.append(obj)
+    if out:
+        mc.select(out, r = True)
+    else:
+        mc.select(clear = True)
+
+def vai_selectSimilarObjects(objs = None, thresh = 0.1):
+    def getVolume(obj):
+        bb = mc.xform(obj, q = True, bb= True)
+        w,h,d = abs(bb[0]-bb[3]),abs(bb[1]-bb[4]),abs(bb[2]-bb[5])
+        return w*h*d
+        
+    def checkType(obj):
+        sh = mc.listRelatives(obj, s = 1)
+        if sh:
+            return mc.objectType(sh[0])
+        return mc.objectType(obj)
+    
+    if not objs:
+        objs = mc.ls(sl = True)
+    
+    allMeshTrans = [o for o in mc.ls(type = 'transform') if checkType(o) == 'mesh']
+    allMeshTrans = mc.ls(allMeshTrans, v = 1)
+    infoDict = {}
+    for trans in allMeshTrans:
+        infoDict[trans] = {'vol': getVolume(trans), 'area':mc.polyEvaluate(trans, a= 1) }
+    
+    out = []
+    for refObj in objs:
+        for testObj in infoDict.keys():
+            if abs(infoDict[refObj]['area']-infoDict[testObj]['area']) < thresh:
+                out.append(testObj)
+                
+    mc.select(out)
+        
 
