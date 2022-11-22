@@ -98,8 +98,10 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
         roentgenLayout = pw.createButtonList([['Bake Keys...', self.showBakeSimulationOptions],['Reconnect Transforms to Constraints', rmm.reconnectTransformToConstraints]], \
                                             label = 'Roentgen', cols = 1, spacing = 2)
         
-        roboLayout = pw.createButtonList([['import faceCap fbx and sound', rmhRobotTools.rmhRobo_importFbxAndSound],['connect faceCap Data', self.robo_connectToFaceCapData],\
-                                        ['matchCurveShape', rmhRobotTools.matchCurveShape]], \
+        roboLayout = pw.createButtonList([['SETUP ALL (one click)', rmhRobotTools.rmhRobo_importAssetsAndSetupRendering], ['import robot', rmhRobotTools.rmhRobo_importRobot],\
+                                            ['import environment', rmhRobotTools.rmhRobo_importEnvironment],['setup renderer', rmhRobotTools.rmhRobo_setupRendering],\
+                                            ['import faceCap fbx and sound', rmhRobotTools.rmhRobo_importFbxAndSound],['connect faceCap Data', self.robo_connectToFaceCapData],\
+                                            ['matchCurveShape', rmhRobotTools.matchCurveShape]], \
                                             label = 'OneMessage Robo', cols = 1, spacing = 2)
         
         # exportSetButtons = pw.createButtonList([['create set', rrt.rmh_createExportSet],['add to set', rrt.rmh_addToExportSet]], \

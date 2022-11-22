@@ -42,6 +42,12 @@ def searchObjectsInNamespaces(objs, objType = 'blendShape'):
 #     tx = ['OneMessage Robo Checklist:', '-]
 #     return mc.confirmDialog( title='createCameraDofLocator', message='vray?', button=['Yes','No'], defaultButton='Yes', cancelButton='No', dismissString='No' )
     
+def listNamespaces():
+    namespaces = mc.namespaceInfo(listOnlyNamespaces=True, recurse=False)
+    namespaces = list(set(namespaces)) if namespaces else []
+    namespaces = [ns for ns in namespaces if not ns in ['UI', 'shared']]
+    return namespaces
+
 def rmhRobo_connectToFaceCapData(sourceBlendShape = 'shapes', targetBlendShapes = ['eyeL_blendShape', 'eyeR_blendShape', 'mouth_blendShape'], headSourceTrans = 'grp_transform', headDestTrans = 'headCtrl' ):
     def createOffsetControl():
         pts = [-3.03,5.677,0.0],[-3.03,6.419,0.0],[-3.35,7.561,0.0],[-3.641,7.937,0.0],[-3.936,8.323,0.0],[-4.773,8.709,0.0],[-5.294,8.709,0.0],[-5.835,8.709,0.0],[-6.642,8.333,0.0],\
@@ -169,18 +175,27 @@ def rmhRobo_connectToFaceCapData(sourceBlendShape = 'shapes', targetBlendShapes 
                 print('connected:', '%s.%s'%(sourceBlendShape, attr), ' to ', '%s.%s'%(bs, attr))
     mc.undoInfo(cck = True)
     
-def rmhRobo_importFbxAndSound(fbxPath = None, connect = True):
+def rmhRobo_importFbxAndSound(fbxPath = None, importSound = True, connect = True):
     if not fbxPath:
         fbxPath = mc.fileDialog2(fm = 1, cap = 'RMH Robo: select faceCap fbx file (sound will be added if samename.wav in same directory)')
         if not fbxPath:
             return
         fbxPath = fbxPath[0]
     
+    grp = mc.group(n = 'faceCap_data', em = True)
+    
     soundPath = fbxPath.split('.')[0] + '.wav'
     
-    mc.file(fbxPath, r = True, type = "FBX",ignoreVersion=1,gl =1, mergeNamespacesOnClash = False,  namespace = "fbxFaceCap", options = "fbx")
+    before_as = set(mc.ls(assemblies=True, l = True))
     
-    if os.path.isfile(soundPath):
+    # mc.file(fbxPath, r = True, type = "FBX",ignoreVersion=1,gl =1, mergeNamespacesOnClash = False,  namespace = "fbxFaceCap", options = "fbx")
+    mc.file(fbxPath, i = True, type = "FBX",ignoreVersion=1,gl =1, mergeNamespacesOnClash = False,  namespace = "fbxFaceCap", options = "fbx")
+    
+    after_as  =set(mc.ls(assemblies=True, l = True))
+    imported_as = list(after_as.difference(before_as))
+    mc.parent(imported_as, grp)
+                    
+    if os.path.isfile(soundPath) and importSound:
         try:
             mc.file(soundPath, i= True, type = "audio", ignoreVersion = 1, mergeNamespacesOnClash = False, options = "o=0" , pr = True)
         except:
@@ -192,6 +207,9 @@ def rmhRobo_importFbxAndSound(fbxPath = None, connect = True):
         rmhRobo_connectToFaceCapData()
 
 def rmhRobo_importRobot():
+    if 'robo' in listNamespaces():
+        print ('robot already imported')
+        return
     roboPath = None
     roboPaths = [r'Y:\RMH\OneMessage_Helper\04_Maya\assets\robot_for_tracking.mb']
     for pth in roboPaths:
@@ -212,6 +230,10 @@ def rmhRobo_importRobot():
     print('robot imported')
     
 def rmhRobo_importEnvironment():
+    # print('ok..', listNamespaces())
+    if 'roboEnv' in listNamespaces():
+        print ('environment already imported')
+        return
     envPath = None
     envPaths = [r'Y:\RMH\OneMessage_Helper\04_Maya\assets\robot_environment.mb']
     for pth in envPaths:
@@ -235,7 +257,53 @@ def rmhRobo_importAssetsAndSetupRendering():
     rmhRobo_importRobot()
     rmhRobo_importEnvironment()
     rmhRobo_importFbxAndSound()
+    rmhRobo_setupRendering()
     
+def rmhRobo_setupRendering(anim = True):
+    def setResolution():
+        result = mc.confirmDialog(title='rmhRobo_setupRendering',message='resolution:',button=['512x512', '1024x1024', '2048x2048', 'Cancel'],\
+                                  defaultButton='OK',cancelButton='Cancel', dismissString='Cancel')
+        if result == 'Cancel':
+            return
+        width, height = list(map(int, result.split('x')))
+        
+        mc.setAttr('defaultResolution.width', width)
+        mc.setAttr('defaultResolution.height', height)
+        mc.setAttr('defaultResolution.deviceAspectRatio', float(width) / height)
+         
+    mel.eval('unifiedRenderGlobalsWindow')
+    if anim:
+        keyObjs = ['fbxFaceCap:grp_transform', 'grp_transform']
+        for keyObj in keyObjs:
+            if mc.objExists(keyObj):
+                keysAt = mc.keyframe('%s.translateX'%keyObj, q = True)
+                frameRange = [min(keysAt), max(keysAt)]
+                mc.playbackOptions(min = int(frameRange[0]),max = int(frameRange[1]) ,ast = int(frameRange[0]),aet = int(frameRange[1]) ) 
+            else:
+                frameRange = [mc.playbackOptions(q = True, minTime = True), mc.playbackOptions(q = True, maxTime = True)]
+        mc.setAttr('defaultRenderGlobals.animation', 1)
+        mc.setAttr('defaultRenderGlobals.startFrame', int(frameRange[0]))
+        mc.setAttr('defaultRenderGlobals.endFrame', int(frameRange[1]))
+        
+    mc.setAttr('redshiftOptions.imageFormat', 1)
+    mc.setAttr('redshiftOptions.exrForceMultilayer', 1)
+    mc.setAttr('redshiftOptions.GIEnabled', 0)
+    mc.setAttr('defaultRenderGlobals.imageFilePrefix', '<Scene>/<Scene>_<RenderLayer>', type = 'string')
+    mc.setAttr('redshiftOptions.enableAutomaticSampling', 0)
+    mc.setAttr('redshiftOptions.unifiedMaxSamples', 64)
+    mc.setAttr('redshiftOptions.transparencyMaxTraceDepth', 128)
+    
+    cam = 'roboEnv:robocam02'
+    if mc.objExists(cam):
+        for _cam in mc.ls(type = 'camera'):
+            mc.setAttr('%s.renderable'%_cam, False)
+        mc.setAttr('%s.renderable'%cam, True)
+            
+    
+    setResolution()
+    mel.eval('unifiedRenderGlobalsWindow')
+    mc.currentTime(1)
+
     
 def matchCurveShape(srcCrv = None, destCrv = None):
     if not srcCrv or not destCrv:
