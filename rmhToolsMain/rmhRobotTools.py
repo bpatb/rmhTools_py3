@@ -298,7 +298,6 @@ def rmhRobo_setupRendering(anim = True):
         for _cam in mc.ls(type = 'camera'):
             mc.setAttr('%s.renderable'%_cam, False)
         mc.setAttr('%s.renderable'%cam, True)
-            
     
     setResolution()
     mel.eval('unifiedRenderGlobalsWindow')
