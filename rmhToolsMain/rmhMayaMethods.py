@@ -21,6 +21,7 @@ import maya.cmds as mc
 import maya.mel as mel
 import maya.OpenMaya as om
 import maya.OpenMayaUI as omUI
+import MASH.api as mapi
 
 import os, random, math, shutil, subprocess
 import __main__
@@ -60,6 +61,22 @@ def findUniqueName(name = 'rename'): ## unique name
     while mc.objExists(name):
         name = '%s_%02d'%(nameRef, i)
         i += 1
+    return name
+
+def rename_individual(obj = None, name = 'rename', shapeFix = True): ## unique name
+    if not mc.objExists(name):
+        mc.rename(obj, name)
+        return name
+    i = 0
+    nameRef = name
+    while mc.objExists(name):
+        name = '%s_%02d'%(nameRef, i)
+        i += 1
+    name = mc.rename(obj, name)
+    if shapeFix:
+        sh = mc.listRelatives(name, s = 1)
+        if sh:
+            mc.rename(sh[0], '%sShape'%name)
     return name
 
 def duplicateToParents(sourceObj = None, destParents = None, instance = False):
@@ -475,6 +492,119 @@ def rmh_exportWorldspaceKeyframesToAFX(obj = None, frameRange = None, fps = 25):
     cb.setText('\n'.join(afxTx), mode=cb.Clipboard)
     
     
+def rmh_MASH_initialStateFromObjects(objs = None, mashWaiters = None):
+    if not objs or not mashWaiters:
+        sel = mc.ls(sl = True)
+        objs = [o for o in sel if mc.objectType(o) == 'transform']
+        mashWaiters = [o for o in sel if mc.objectType(o) == 'MASH_Waiter']
+    
+    for waiter in mashWaiters:
+        num = len(objs)
+        dist = mc.listConnections('%s.waiterMessage'%waiter, s = 1, d = 0)[0]
+        countPlug = mc.listConnections('%s.pointCount'%dist, s = 1, d = 0, p = 1)
+        if countPlug:
+            mc.disconnectAttr(countPlug[0], '%s.pointCount'%dist)
+        
+        mc.setAttr('%s.pointCount'%dist, num)
+        mc.setAttr('%s.arrangement'%dist, 7)
+        for i,obj in enumerate(objs):
+            mc.connectAttr('%s.worldMatrix[0]'%obj, '%s.initialStateMatrix[%d]'%(dist, i), f = 1)
+
+def rmh_MASH_getMashFromList(returnIfOne = True):
+    allMashes = mc.ls(type = 'MASH_Waiter')
+    if len(allMashes) == 1:
+        return allMashes[0]
+    elif len(allMashes) > 1:
+        mash, ok = QInputDialog.getItem(None, 'rmh_MASH_getMashFromList', 'MASH network', allMashes, current = 0, editable = True)
+        if not ok:
+            return
+        if mc.objExists(mash):
+            return mash
+    else:
+        print('no MASH networks')
+        return
+
+def rmh_MASH_addObjectsToRepro(objs = None, mash = None, replace = True):
+    import mash_repro_utils
+    import mash_repro_aetemplate
+    
+    def MASH_disconnectAllReproInputs(repro):
+        data = mash_repro_utils.get_data_layout(repro)
+        indices = list(data.keys())
+        indices.sort()
+        for index in reversed(list(range(len(indices)))):
+            mash_repro_utils.remove_mesh_group(repro, index)
+    
+    if not objs:
+        objs = mc.ls(sl = True)
+    
+    mash = rmh_MASH_getMashFromList() if not mash else mash
+    if not mash:
+        print('rmh_MASH_addObjectsToRepro: no MASH found')
+        return
+    
+    mc.undoInfo(ock = True)
+
+    repro = mc.listConnections('%s.instancerMessage'%mash, d = 1, s = 0)[0]
+    
+    if replace:
+        MASH_disconnectAllReproInputs(repro)
+    
+    for obj in objs:
+        # print repro, obj
+        mash_repro_utils.connect_mesh_group(repro, obj) 
+        mash_repro_aetemplate.refresh_all_aetemplates() 
+    
+    mashNetwork = mapi.Network(mash)
+    nodes = mashNetwork.getAllNodesInNetwork() or []
+    for node in nodes:
+        if mc.objectType(node) == 'MASH_Id':
+            mc.setAttr('%s.numObjects'%node, len(list(mash_repro_utils.get_data_layout(repro).keys())))
+            
+    mc.undoInfo(cck = True)
+    
+def rmh_MASH_breakoutAll(mashWaiters = None, locNameBase = None, translate = True, rotate = True, scale = True, connect = True, toGroup = None):
+    if not mashWaiters:
+        sel = mc.ls(sl = True)#
+        mashWaiters = [o for o in sel if mc.objectType(o) == 'MASH_Waiter']
+    if not mashWaiters:
+        mc.warning('rmh_MASH_breakoutAll: gotta select the MASH waiter!')
+    
+    mc.undoInfo(ock = True)
+    locs = []
+    metaGrp = '_MASHattachLocs' if mc.objExists('_MASHattachLocs') else mc.group(n = '_MASHattachLocs', em = True)
+    breakouts = []
+    for waiter in mashWaiters:
+        grp = mc.group(n = '%s_locGrp'%waiter, em = True) if not toGroup else toGroup
+        mc.parent(grp, metaGrp)
+        count = mc.getAttr('%s.pointCount'%waiter)
+        
+        breakout = mc.createNode('MASH_Breakout')
+        mc.connectAttr('%s.outputPoints'%waiter, '%s.inputPoints'%breakout)
+        breakouts.append(breakout)
+        
+        for i in range(count):
+            loc = mc.spaceLocator()[0]
+            if locNameBase:
+                loc = rename_individual(loc, '%s_loc%03d'%(locNameBase, i))
+            else:
+                loc = rename_individual(loc, '%s_loc%03d'%(waiter, i))
+            mc.parent(loc, grp)
+            if connect:
+                mc.connectAttr('%s.outputs[%d].translate'%(breakout, i), '%s.translate'%loc, f = 1)
+                mc.connectAttr('%s.outputs[%d].rotate'%(breakout, i), '%s.rotate'%loc, f = 1)
+                mc.connectAttr('%s.outputs[%d].scale'%(breakout, i), '%s.scale'%loc, f = 1)
+            else:
+                vals = mc.getAttr('%s.outputs[%d].translate'%(breakout, i))[0]
+                mc.setAttr('%s.translate'%loc, vals[0], vals[1], vals[2] )
+                vals = mc.getAttr('%s.outputs[%d].rotate'%(breakout, i))[0]
+                mc.setAttr('%s.rotate'%loc, vals[0], vals[1], vals[2] )
+                vals = mc.getAttr('%s.outputs[%d].scale'%(breakout, i))[0]
+                mc.setAttr('%s.scale'%loc, vals[0], vals[1], vals[2] )
+            locs.append(loc)
+    mc.undoInfo(cck = True)
+    return breakouts, locs
+
 def attachCubesToObjects(objs = None, cSize = 1): #weil nuke keine locator importiert
     if not objs:
         objs = mc.ls(sl = True)
@@ -495,3 +625,20 @@ def attachCubesToObjects(objs = None, cSize = 1): #weil nuke keine locator impor
     
     return out
         
+def getMainWindow():
+    global app
+    app = QApplication.instance()
+    
+    ptr = omUI.MQtUtil.mainWindow()
+    win = wrapInstance(int(ptr), QWidget)
+    
+    return win
+
+def getMainWindow2(): # functions better in Maya 2017
+    try:
+        for obj in qApp.topLevelWidgets():
+            if obj.objectName() == 'MayaWindow':
+                return obj
+    except:
+        raise RuntimeError('Could not find MayaWindow instance')
+    

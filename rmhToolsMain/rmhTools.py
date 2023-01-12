@@ -78,14 +78,21 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
                                             ['Bake Keys...', self.showBakeSimulationOptions],['Reconnect Transforms to Constraints', rmm.reconnectTransformToConstraints]], \
                                             label = 'MASH / Breakout / Baking', cols = 1, spacing= 2)
         
+        unity_infoLabel = QLabel('best practice for unity export:\n- leave Maya units in meter\n- model in cm (1m = 100 units) \n- export in cm')
+        
         optsContext = ['set paths', rrt.rmh_setGameExporterPath], ['set options', rrt.rmh_setGameExporterOptions]
-        unityButtons = pw.createButtonList([['Open GameExporter', self.openGameExporter], ['Auto-Set GameExporter Options\n(right click for steps)', self.gameExporter_setAll, optsContext],\
+        unityButtons = pw.createButtonList([['setupGridForCm', rrt.rmh_setupGridForCm],['adjustCameraSettingsForCm', rrt.rmh_adjustCameraSettingsForCm],\
+                                            ['Open GameExporter', self.openGameExporter], ['Auto-Set GameExporter Options\n(right click for steps)', self.gameExporter_setAll, optsContext],\
                                             ['Goto AssetExportFolder', rrt.rmh_gotoAssetExportFolder],\
-                                            ['Add Selection to exportSet', rrt.rmh_addToExportSet],['copyToUnityFolder', rrt.rmh_copyToUnityFolder]], \
+                                            ['Add Selection to exportSet', rrt.rmh_addToExportSet],['copyToUnityFolder', rrt.rmh_copyToUnityFolder],\
+                                            ], \
                                             label = 'Unity Export', cols = 1, spacing= 2)   
         
         bwFachButtons = pw.createButtonList([['shoot bullets (select straight curves)', rmhBW.BWFpf_shootBullet],['BW_scaleNonVisibleToZero', rmhBW.BW_scaleNonVisibleToZero]], \
                                             label = 'BW Fachpflege', cols = 1, spacing = 2)
+        
+        bwInfButtons = pw.createButtonList([['BWInf - create text', rmhBW.BWInf_textListToType]], \
+                                            label = 'BW Inf', cols = 1, spacing = 2)
         
         
         nukeButtons = pw.createButtonList([['exportNukeAssets_addToSet', rmm.rmh_exportNukeAssets_addToSet],['exportNukeAssets', rmm.rmh_exportNukeAssets_addToSet], \
@@ -108,13 +115,13 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
         #                                     label = 'Export Set', cols = 2, spacing= 2)   
         
         reload(rmhBW)
-        realtimeLayout = pw.makeBoxLayout([glbButtons,mashButtons,unityButtons,QWidget()],stretchArray = [0,0,0,1], alsWidget = True)
+        realtimeLayout = pw.makeBoxLayout([glbButtons,mashButtons,unity_infoLabel,unityButtons,QWidget()],stretchArray = [0,0,0,0,1], alsWidget = True)
         
         # bundeswehrLayout = pw.makeBoxLayout([bwFachButtons,QWidget()],stretchArray = [0,1], alsWidget = True)
         # 
         # bencardLayout = pw.makeBoxLayout([nukeButtons,QWidget()],stretchArray = [0,1], alsWidget = True)
         
-        projectsLayout = pw.makeBoxLayout([bwFachButtons, nukeButtons,afxButtons, roentgenLayout, roboLayout, QWidget()],stretchArray = [0,0,0,0,0,1], alsWidget = True)
+        projectsLayout = pw.makeBoxLayout([bwFachButtons,bwInfButtons, nukeButtons,afxButtons, roentgenLayout, roboLayout, QWidget()],stretchArray = [0,0,0,0,0,0,1], alsWidget = True)
         
         ############# mainTab
         self.mainTab = QTabWidget()
@@ -209,6 +216,7 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
             butLayout = pw.makeBoxLayout([QLabel(label), gridLayout], spacing = spacing, margin = margin)
             
         return butLayout
+    
     def showRedshiftBakingToolsDialog(self):
         import rmhRedshiftBakingTools as rs_bt
         reload(rs_bt)

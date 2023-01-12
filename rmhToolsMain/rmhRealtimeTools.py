@@ -99,6 +99,17 @@ def subs_createPBSShader(name = 'PBS_Mat'):
     return sg, name
 
 
+def rmh_setupGridForCm():
+    mc.grid(spacing=100, s = 500)
+
+def rmh_adjustCameraSettingsForCm():
+    all_cams = [c for c in mc.ls(type = 'camera') if not mc.getAttr('%s.orthographic'%c)]
+    for cam in all_cams:
+        mc.setAttr('%s.nearClipPlane'%cam, 0.1)
+        mc.setAttr('%s.farClipPlane'%cam, 100000)
+        mc.setAttr('%s.locatorScale'%cam, 2000)
+    
+
 def checkMayaUnits(shouldBe = 'm'):
     currentUnit = mc.currentUnit(q = True, linear = True)
     if currentUnit != shouldBe:
