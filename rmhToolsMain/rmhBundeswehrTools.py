@@ -325,7 +325,6 @@ def BWInf_textListToType(textList = None, importType = None, t_opts = {'currentF
         if importType == 'Cancel':
             return
         
-        
     t3dnodes = []
     t3dtranses = []
     sel = mc.ls(sl = True)
@@ -353,18 +352,29 @@ def BWInf_textListToType(textList = None, importType = None, t_opts = {'currentF
         t3dtranses.append(t3d_trans)
     
     if importType == 'split':
-        BWInf_splitObject(t3dtranses)
+        BWInf_splitObjects(t3dtranses)
     elif importType == 'mash':
-        splitObjs = BWInf_splitObject(t3dtranses)
-        BWInf_createMashFromObjects(splitObjs)
+        for t3dtrans in t3dtranses:
+            splitObjs = BWInf_splitObjects([t3dtrans])
+            BWInf_createMashFromObjects(splitObjs)
     
     mc.undoInfo(cck = True)
         
-        
     return t3dnodes, t3dtranses
 
+def BWInf_createInitialTransforms(objs = None, addToGroup = None, addControl = True):
+    def createControl(name):
+        ctrl_g = rmm.rmh_createGroupIfNonExistent('rig_g')
+        pts = [[0.0,4.0,0.0],[0.0,3.696,1.532],[0.0,2.828,2.828],[0.0,1.532,3.696],[0.0,0.0,4.0],[0.0,-1.532,3.696],[0.0,-2.828,2.828],[0.0,-3.696,1.532],[0.0,-4.0,0.0],[0.0,-3.696,-1.532],[0.0,-2.828,-2.828],[0.0,-1.532,-3.696],[0.0,0.0,-4.0],[0.0,1.532,-3.696],[0.0,2.828,-2.828],\
+        [0.0,3.696,-1.532],[0.0,4.0,0.0],[1.532,3.696,0.0],[2.828,2.828,0.0],[3.696,1.532,0.0],[4.0,0.0,0.0],[3.696,-1.532,0.0],[2.828,-2.828,0.0],[1.532,-3.696,0.0],[0.0,-4.0,0.0],[-1.532,-3.696,0.0],[-2.828,-2.828,0.0],[-3.696,-1.532,0.0],[-4.0,0.0,0.0],\
+        [-3.696,1.532,0.0],[-2.828,2.828,0.0],[-1.532,3.696,0.0],[0.0,4.0,0.0],[0.0,3.696,-1.532],[0.0,2.828,-2.828],[0.0,1.532,-3.696],[0.0,0.0,-4.0],[-1.532,0.0,-3.696],[-2.828,0.0,-2.828],[-3.696,0.0,-1.532],[-4.0,0.0,0.0],[-3.696,0.0,1.532],\
+        [-2.828,0.0,2.828],[-1.532,0.0,3.696],[0.0,0.0,4.0],[1.532,0.0,3.696],[2.828,0.0,2.828],[3.696,0.0,1.532],[4.0,0.0,0.0],[3.696,0.0,-1.532],[2.828,0.0,-2.828],[1.532,0.0,-3.696],[0.0,0.0,-4.0]]
 
-def BWInf_createInitialTransforms(objs = None, addToGroup = None):
+        c = mc.curve(p = pts, d = 3)
+        name = rmm.rename_individual(c, name)
+        rmm.setCurveColor(crvs = name, col = [255,255,0])
+        return name
+        
     if not objs:
         objs = mc.ls(sl = True)
     
@@ -372,6 +382,9 @@ def BWInf_createInitialTransforms(objs = None, addToGroup = None):
         mc.group(n = addToGroup, em = True)
     
     out = []
+    out_groups = []
+    out_controls = []
+    out_origGroups_dc = {}
     
     mc.undoInfo(ock = True)
     for obj in objs:
@@ -380,23 +393,61 @@ def BWInf_createInitialTransforms(objs = None, addToGroup = None):
             print('%s exists'%t)
             out.append(t)
             continue
+        p = mc.listRelatives(obj, p = True)
         mc.createNode('transform', n = t)
         c = mc.parentConstraint(obj, t, mo = False)
         mc.delete(c)
+        grpName = None
         if addToGroup:
             mc.parent(t, addToGroup)
+            grpName = addToGroup
+        elif p:
+            rig_g = rmm.rmh_createGroupIfNonExistent('rig_g')
+            p_group = rmm.rmh_createGroupIfNonExistent('%s_initGrp'%p[0], rig_g)
+            mc.parent(t, p_group)
+            grpName = p_group
+        else:
+            rig_g = rmm.rmh_createGroupIfNonExistent('rig_g')
+            stdGrp = rmm.rmh_createGroupIfNonExistent('%s_initGrp'%p[0], rig_g)
+            mc.parent(t, addToGroup)
+            grpName = p_group
+            
+        if not grpName in out_groups:
+            out_groups.append(grpName)
+            if p:
+                out_origGroups_dc[grpName] = p[0]
         out.append(t)
+    
+    if addControl:
+        ctrl_g = rmm.rmh_createGroupIfNonExistent('ctrl_g')
+        for grp in out_groups:
+            ctrl = createControl('%s_ctrl'%(grp.split('_')[0]) )
+            
+            orig_grp = out_origGroups_dc.get(grp, None)
+            if orig_grp:
+                objs = mc.listRelatives(orig_grp, type = 'transform')
+                for obj in objs:
+                    rmm.connectMessageAttribute(srcs = ctrl, target = obj, messageAttr = 'typeCtrl')
+                rmm.connectMessageAttribute(srcs = objs, target = ctrl, messageAttr = 'typeObjs')
+            
+            mc.parentConstraint(ctrl, grp, mo = False)
+            mc.scaleConstraint(ctrl, grp, mo = False)
+            out_controls.append(ctrl)
+            mc.parent(ctrl, ctrl_g)
+            
     mc.undoInfo(cck = True)
     
-    return out
+    return out, out_groups, out_controls
     
-def BWInf_splitObject(objs = None):
+def BWInf_splitObjects(objs = None, triangulate = True):
     mc.undoInfo(ock = True)
     out = []
     for obj in objs:
         mc.select(obj)
         mel.eval('DeleteHistory;')
         mc.xform(obj, cp = True)
+        if triangulate:
+            mc.polyTriangulate(obj, ch = 0)
         try:
             mc.polySeparate(obj, ch = 0)
         except:
@@ -410,32 +461,70 @@ def BWInf_splitObject(objs = None):
     mc.undoInfo(cck = True)
     return out
 
-def BWInf_createMashFromObjects(objs = None, initGroup = None, mashName = 'splMash'):
+def BWInf_createMashFromObjects(objs = None, initGroup = None, mashName = None):
     if not objs:
         objs = mc.ls(sl = True)
-    
+        
     mc.undoInfo(ock = True)
     
-    initObjs = BWInf_createInitialTransforms(objs, addToGroup = initGroup)
+    msh_g = rmm.rmh_createGroupIfNonExistent('MSH_g', hide = True)
+    
+    initObjs, initGrps, ctrls = BWInf_createInitialTransforms(objs, addToGroup = initGroup, addControl = True)
+    
+    if mashName == None:
+        if ctrls:
+            mashName = ctrls[0].split('_')[0] + '_Mash'
+        else:
+            mashName = 'splMash'
     
     tmpCube = 'mash_tmpCube'
     if not mc.objExists(tmpCube):
+        tmp_t = rmm.rmh_createGroupIfNonExistent('TMP_g', hide = True)
         mc.polyCube(n = tmpCube, ch = 0)
+        mc.parent(tmpCube, tmp_t)
     
+    mc.select(clear = True)
     mashNetwork = mapi.Network()
     mashNetwork.createNetwork(name=mashName)
+    mashNetwork.setPointCount(len(initObjs))
     
     id_node = mashNetwork.addNode("MASH_ID")
+    rnd_node = mashNetwork.addNode("MASH_Random")
+    
     mash = mashNetwork.waiter
     dist = mashNetwork.distribute
     
+    reproMesh = mash + '_ReproMesh'
+    mc.parent(reproMesh, msh_g)
+        
     rmm.rmh_MASH_addObjectsToRepro([tmpCube], mash, replace = True)
     rmm.rmh_MASH_initialStateFromObjects(objs = initObjs, mashWaiters = [mash])
+    
+    # mashNetwork.setData(mashNetwork.getData())
     
     breakouts, b_locs = rmm.rmh_MASH_breakoutAll(mashWaiters = [mash], locNameBase = None, translate = True, rotate = True, scale = True, connect = True, toGroup = None)
     
     for loc,obj in zip(b_locs, objs):
         mc.parentConstraint(loc, obj)
+    
+    stdVals = {'randEnvelope':0,'randomSeed':1, 'scatterAmpPosX':150,'scatterAmpPosY':50,'scatterAmpPosZ':150, 'scatterAmpRot':100}
+    minmaxVals =  {'randEnvelope':[0,1], 'randomSeed':[1,3453454]}
+    if ctrls:
+        ctrl = ctrls[0]
+        for attr in ['randEnvelope', 'randomSeed', 'scatterAmpPosX', 'scatterAmpPosY', 'scatterAmpPosZ', 'scatterAmpRot']:
+            if not attr in mc.listAttr(ctrl):
+                mc.addAttr(ctrl, ln = attr, at = 'double', k = 1, dv = stdVals.get(attr, 0), minValue = minmaxVals.get(attr, [-10000,10000])[0], maxValue = minmaxVals.get(attr, [-10000,10000])[1])
+            
+        mc.connectAttr('%s.scatterAmpPosX'%ctrl, '%s.positionX'%rnd_node.name)
+        mc.connectAttr('%s.scatterAmpPosY'%ctrl, '%s.positionY'%rnd_node.name)
+        mc.connectAttr('%s.scatterAmpPosZ'%ctrl, '%s.positionZ'%rnd_node.name)
+        mc.connectAttr('%s.scatterAmpRot'%ctrl, '%s.rotationX'%rnd_node.name)
+        mc.connectAttr('%s.scatterAmpRot'%ctrl, '%s.rotationY'%rnd_node.name)
+        mc.connectAttr('%s.scatterAmpRot'%ctrl, '%s.rotationZ'%rnd_node.name)
+        mc.connectAttr('%s.randEnvelope'%ctrl, '%s.randEnvelope'%rnd_node.name)
+        mc.connectAttr('%s.randomSeed'%ctrl, '%s.randomSeed'%rnd_node.name)
+            
+    
     mc.undoInfo(cck = True)
 
 def BWInf_changeTextOptions(objs = None, t_opts = {'currentFont':'BundesSans' }):

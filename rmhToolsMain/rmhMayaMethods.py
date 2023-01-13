@@ -28,7 +28,52 @@ import __main__
 import rmhTools_widgets as pw
 
 
+def setCurveColor(crvs = None, col = [1,1,0], rememberPrevious = 1): ### assume 255 col range
+    if not crvs:
+        crvs = mc.ls(sl = True)
+    if type(crvs) in [str]:
+        crvs = [crvs]
+    for crv in crvs:
+        shs = mc.listRelatives(crv, s = True) or []
+        for sh in shs:
+            if mc.objectType(sh) != 'nurbsCurve':
+                continue
+            try:
+                mc.setAttr('%s.overrideEnabled'%sh, 1)
+                mc.setAttr('%s.overrideRGBColors'%sh, 1)
+                for i,ch in enumerate(['R','G','B']):
+                    # print col
+                    mc.setAttr('%s.overrideColor%s'%(sh,ch), col[i]/ 255.0)
+            except:
+                mc.warning('couldnt set color for %s'%crv)
+        
+    mc.select(crvs)
 
+
+def rename_individual(obj = None, name = 'rename', shapeFix = True): ## unique name
+    if not mc.objExists(name):
+        mc.rename(obj, name)
+        return name
+    i = 0
+    nameRef = name
+    while mc.objExists(name):
+        name = '%s_%02d'%(nameRef, i)
+        i += 1
+    name = mc.rename(obj, name)
+    if shapeFix:
+        sh = mc.listRelatives(name, s = 1)
+        if sh:
+            mc.rename(sh[0], '%sShape'%name)
+    return name
+
+def rmh_createGroupIfNonExistent(grp, parent = None, hide = False, relativeGroup = False):
+    if not mc.objExists(grp):
+        mc.group(n = grp, em = True)
+        if parent:
+            mc.parent(grp, parent, r = relativeGroup)
+        if hide:
+            mc.hide(grp)
+    return grp
 
 def rmh_createGroupIfNonExistent(grp, parent = None, hide = False):
     if not mc.objExists(grp):
@@ -63,6 +108,46 @@ def findUniqueName(name = 'rename'): ## unique name
         i += 1
     return name
 
+def connectMessageAttribute(srcs = None, target = None, messageAttr = None):
+    def getFreeIdx(plug):
+        _idx = 0
+        test = '%s[%d]'%(plug, _idx)
+        while mc.listConnections(test, s = 1):
+            _idx+=1
+            test = '%s[%d]'%(plug, _idx)
+        return _idx
+    
+    if not srcs or not target:
+        sel = mc.ls(sl = True)
+        srcs, target = sel[:-1], sel[-1]
+    
+    srcs = [srcs] if type(srcs) == str else srcs
+    
+    if not messageAttr:
+        udAttrs = mc.listAttr(target, ud= True) or []
+        messageAttrs = [a for a in udAttrs if mc.getAttr('%s.%s'%(target, a), type = True) == 'message' ] or []
+        messageAttr, ok = QInputDialog.getItem(None, 'connectMessageAttribute', 'message attr', messageAttrs, current = 0, editable = True)
+        if not ok:
+            return
+        messageAttr = str(messageAttr)
+    
+    if not messageAttr in mc.listAttr(target):
+        mc.addAttr(target, ln = messageAttr, at = 'message', m = True)
+    
+    found = mc.listConnections('%s.%s'%(target, messageAttr), s = 1) or []
+    
+    # mc.connectAttr('%s.%s'%(src, outMessageAttr), '%s.%s'%(target, messageAttr), f = 1)
+    outMessageAttr = 'messageOut'
+    for src in srcs:
+        if src in found:
+            continue
+        if not outMessageAttr in mc.listAttr(src):
+            mc.addAttr(src, ln = outMessageAttr, at = 'message')
+            
+        idx = getFreeIdx('%s.%s'%(target, messageAttr))
+        mc.connectAttr('%s.%s'%(src, outMessageAttr), '%s.%s[%d]'%(target, messageAttr, idx), f = 1)
+    
+    
 def rename_individual(obj = None, name = 'rename', shapeFix = True): ## unique name
     if not mc.objExists(name):
         mc.rename(obj, name)
@@ -572,7 +657,10 @@ def rmh_MASH_breakoutAll(mashWaiters = None, locNameBase = None, translate = Tru
     
     mc.undoInfo(ock = True)
     locs = []
-    metaGrp = '_MASHattachLocs' if mc.objExists('_MASHattachLocs') else mc.group(n = '_MASHattachLocs', em = True)
+    rig_g = rmh_createGroupIfNonExistent('rig_g', hide = True)
+    metaGrp = rmh_createGroupIfNonExistent('_MASHattachLocs' ,rig_g, hide = True)
+    # metaGrp = '_MASHattachLocs' if mc.objExists('_MASHattachLocs') else mc.group(n = '_MASHattachLocs', em = True)
+    
     breakouts = []
     for waiter in mashWaiters:
         grp = mc.group(n = '%s_locGrp'%waiter, em = True) if not toGroup else toGroup
