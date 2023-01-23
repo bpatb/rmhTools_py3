@@ -91,7 +91,9 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
         bwFachButtons = pw.createButtonList([['shoot bullets (select straight curves)', rmhBW.BWFpf_shootBullet],['BW_scaleNonVisibleToZero', rmhBW.BW_scaleNonVisibleToZero]], \
                                             label = 'BW Fachpflege', cols = 1, spacing = 2)
         
-        bwInfButtons = pw.createButtonList([['BWInf - create text', rmhBW.BWInf_textListToType]], \
+        bwInfButtons = pw.createButtonList([['BWInf - create text', rmhBW.BWInf_textListToType], ['BWInf - splitObjects', rmhBW.BWInf_splitObjects],\
+                                            ['BWInf - createMashFromObjects', rmhBW.BWInf_createMashFromObjects], ['BWInf - makeGyroConnections', rmhBW.BWInf_makeGyroConnections],\
+                                            ['BWInf - setRandomValues', rmhBW.BWInf_gyro_setRandomValues],['BWInf - createConnection', rmhBW.BWInf_createConnection]], \
                                             label = 'BW Inf', cols = 1, spacing = 2)
         
         

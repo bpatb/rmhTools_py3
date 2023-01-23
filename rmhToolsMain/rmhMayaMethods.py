@@ -693,6 +693,44 @@ def rmh_MASH_breakoutAll(mashWaiters = None, locNameBase = None, translate = Tru
     mc.undoInfo(cck = True)
     return breakouts, locs
 
+def rmh_addSubCurveClipControl(subCrvs = None):
+    if not subCrvs:
+        subCrvs = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    for crv in subCrvs:#
+        if not 'minCurve' in mc.listAttr(crv):
+            continue
+        if 'minClip' in mc.listAttr(crv):
+            continue
+        
+        stdVals = {'minClip':0, 'maxClip':1}
+        for attr in ['minClip', 'maxClip']:
+            if not attr in mc.listAttr(crv):
+                mc.addAttr(crv, ln = attr, at = 'double', minValue = 0, maxValue = 1, k = 1, dv = stdVals.get(attr))
+        subNode = mc.listConnections('%s.minCurve'%crv, d = 1, s = 0)[0]
+        sr = mc.createNode('setRange', n = '%s_range'%crv)
+        mc.setAttr('%s.oldMinX'%sr,0)
+        mc.setAttr('%s.oldMaxX'%sr,1)
+        mc.setAttr('%s.oldMinY'%sr,0)
+        mc.setAttr('%s.oldMaxY'%sr,1)
+        mc.connectAttr('%s.minClip'%crv, '%s.minX'%sr, f = 1)
+        mc.connectAttr('%s.minClip'%crv, '%s.minY'%sr, f = 1)
+        mc.connectAttr('%s.maxClip'%crv, '%s.maxX'%sr, f = 1)
+        mc.connectAttr('%s.maxClip'%crv, '%s.maxY'%sr, f = 1)
+        mc.connectAttr('%s.valueX'%sr, '%s.minValue'%subNode, f = 1)
+        mc.connectAttr('%s.valueY'%sr, '%s.maxValue'%subNode, f = 1)
+        mc.connectAttr('%s.minCurve'%crv, '%s.valueX'%sr, f = 1)
+        mc.connectAttr('%s.maxCurve'%crv, '%s.valueY'%sr, f = 1)
+        
+        mc.connectAttr('%s.outValueX'%sr, '%s.minValue'%subNode, f = 1)
+        mc.connectAttr('%s.outValueY'%sr, '%s.maxValue'%subNode, f = 1)
+        
+    mc.undoInfo(cck = True)
+
+
+    
+
 def attachCubesToObjects(objs = None, cSize = 1): #weil nuke keine locator importiert
     if not objs:
         objs = mc.ls(sl = True)

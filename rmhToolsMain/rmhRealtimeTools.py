@@ -280,9 +280,15 @@ def rmh_setGameExporterOptions():
 
 def rmh_copyToUnityFolder(unityDir = None):
     assetDir, sceneBase = rmh_getAssetDir()
-    sourcePath = os.path.join(assetDir, sceneBase+'.fbx')
-    if not os.path.isfile(sourcePath):
-        mc.error('%s does not exist'%sourcePath)
+    fileList = os.listdir(assetDir)
+    fileList = [os.path.join(assetDir, f).replace('/', '\\') for f in fileList if f.split('.')[-1].lower() == 'fbx' and sceneBase in f]
+    
+    # sourcePath = os.path.join(assetDir, sceneBase+'.fbx')
+    # if not os.path.isfile(sourcePath):
+    #     mc.error('%s does not exist'%sourcePath)
+    if not fileList:
+        print('rmh_copyToUnityFolder --- no files with base %s found in %s'%(sceneBase, assetDir))
+        return
     
     if mc.optionVar( exists='unityExportDir' ):
         lastUnityDir = mc.optionVar( q='unityExportDir' )
@@ -301,8 +307,12 @@ def rmh_copyToUnityFolder(unityDir = None):
     
     mc.optionVar( sv=('unityExportDir', unityDir))
     
-    destPath = os.path.join(unityDir, sceneBase+'.fbx')
+    for sourcePath in fileList:
+        fileName = sourcePath.split('\\')[-1]
+        destPath = os.path.join(unityDir, fileName)
+        shutil.copy2(sourcePath, destPath)
+        print('copied from', sourcePath, 'to', destPath)
     
-    shutil.copy2(sourcePath, destPath)
-    print('copied from', sourcePath, 'to', destPath)
+    
+    
     

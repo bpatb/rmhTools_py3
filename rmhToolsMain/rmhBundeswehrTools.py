@@ -1,5 +1,4 @@
-
-
+# -*- coding: iso-8859-1 -*-
 from __future__ import absolute_import
 import six
 from importlib import reload
@@ -297,7 +296,7 @@ def BWInf_gyro_setRandomValues():
     mc.undoInfo(cck = True)
 
 def BWInf_textToSpacedHex(text = 'test ahahaha 345345'):
-    hx = str(text.encode("utf-8").hex())
+    hx = str(text.encode("iso-8859-1").hex())
     hx = " ".join([hx[i:i+2] for i in range(0, len(hx), 2)] )
     return hx
 
@@ -311,7 +310,6 @@ def BWInf_setOptsByType(obj, opts):
         else:
             mc.setAttr('%s.%s'%(obj, key), val)
 
-
 def BWInf_textListToType(textList = None, importType = None, t_opts = {'currentFont':'BundesSans', 'fontSize':12, 'alignmentMode':2 }, extrudeOpts = {'extrudeDistance':0.1, 'extrudeDivisions':1 }, attachToSel = False):
     if textList == None:
         result = mc.promptDialog(title='BWInf_textListToType',message='textList:',button=['OK', 'Cancel'], defaultButton='OK',cancelButton='Cancel', dismissString='Cancel', text = 'text1;text2')
@@ -321,7 +319,7 @@ def BWInf_textListToType(textList = None, importType = None, t_opts = {'currentF
         textList = textList.split(';')
     
     if importType == None:
-        importType = mc.confirmDialog(title='BWInf_textListToType',message='importType:',button=['pure', 'split', 'mash', 'Cancel'], defaultButton='OK',cancelButton='Cancel', dismissString='Cancel')
+        importType = mc.confirmDialog(title='BWInf_textListToType',message='importType:',button=['pure', 'split', 'visCtrl', 'mash', 'Cancel'], defaultButton='OK',cancelButton='Cancel', dismissString='Cancel')
         if importType == 'Cancel':
             return
         
@@ -353,6 +351,19 @@ def BWInf_textListToType(textList = None, importType = None, t_opts = {'currentF
     
     if importType == 'split':
         BWInf_splitObjects(t3dtranses)
+    elif importType == 'visCtrl':
+        # try:
+        import partyRigTools
+        for t3dtrans in t3dtranses:
+            ctrl = BWInf_createControl('%s_ctrlt'%t3dtrans, addToGroup = 'ctrl_g')
+            splitObjs = BWInf_splitObjects([t3dtrans])
+            mc.parentConstraint(ctrl, t3dtrans)
+            mc.scaleConstraint(ctrl, t3dtrans)
+            mc.addAttr(ctrl, ln = 'visAnim', at = 'double', minValue = -1, maxValue = len(splitObjs) + 1 , k = 1, dv = len(splitObjs))
+            partyRigTools.createMultiVisibilityControl(objs = splitObjs, ctrl = ctrl, ctrlName = False, attrName = 'visAnim', limitValues = False)
+        # except:
+        #     print('partyRigTools not available')
+            
     elif importType == 'mash':
         for t3dtrans in t3dtranses:
             splitObjs = BWInf_splitObjects([t3dtrans])
@@ -362,18 +373,23 @@ def BWInf_textListToType(textList = None, importType = None, t_opts = {'currentF
         
     return t3dnodes, t3dtranses
 
-def BWInf_createInitialTransforms(objs = None, addToGroup = None, addControl = True):
-    def createControl(name):
-        ctrl_g = rmm.rmh_createGroupIfNonExistent('rig_g')
-        pts = [[0.0,4.0,0.0],[0.0,3.696,1.532],[0.0,2.828,2.828],[0.0,1.532,3.696],[0.0,0.0,4.0],[0.0,-1.532,3.696],[0.0,-2.828,2.828],[0.0,-3.696,1.532],[0.0,-4.0,0.0],[0.0,-3.696,-1.532],[0.0,-2.828,-2.828],[0.0,-1.532,-3.696],[0.0,0.0,-4.0],[0.0,1.532,-3.696],[0.0,2.828,-2.828],\
-        [0.0,3.696,-1.532],[0.0,4.0,0.0],[1.532,3.696,0.0],[2.828,2.828,0.0],[3.696,1.532,0.0],[4.0,0.0,0.0],[3.696,-1.532,0.0],[2.828,-2.828,0.0],[1.532,-3.696,0.0],[0.0,-4.0,0.0],[-1.532,-3.696,0.0],[-2.828,-2.828,0.0],[-3.696,-1.532,0.0],[-4.0,0.0,0.0],\
-        [-3.696,1.532,0.0],[-2.828,2.828,0.0],[-1.532,3.696,0.0],[0.0,4.0,0.0],[0.0,3.696,-1.532],[0.0,2.828,-2.828],[0.0,1.532,-3.696],[0.0,0.0,-4.0],[-1.532,0.0,-3.696],[-2.828,0.0,-2.828],[-3.696,0.0,-1.532],[-4.0,0.0,0.0],[-3.696,0.0,1.532],\
-        [-2.828,0.0,2.828],[-1.532,0.0,3.696],[0.0,0.0,4.0],[1.532,0.0,3.696],[2.828,0.0,2.828],[3.696,0.0,1.532],[4.0,0.0,0.0],[3.696,0.0,-1.532],[2.828,0.0,-2.828],[1.532,0.0,-3.696],[0.0,0.0,-4.0]]
+def BWInf_createControl(name, addToGroup = None):
+    pts = [[0.0,4.0,0.0],[0.0,3.696,1.532],[0.0,2.828,2.828],[0.0,1.532,3.696],[0.0,0.0,4.0],[0.0,-1.532,3.696],[0.0,-2.828,2.828],[0.0,-3.696,1.532],[0.0,-4.0,0.0],[0.0,-3.696,-1.532],[0.0,-2.828,-2.828],[0.0,-1.532,-3.696],[0.0,0.0,-4.0],[0.0,1.532,-3.696],[0.0,2.828,-2.828],\
+    [0.0,3.696,-1.532],[0.0,4.0,0.0],[1.532,3.696,0.0],[2.828,2.828,0.0],[3.696,1.532,0.0],[4.0,0.0,0.0],[3.696,-1.532,0.0],[2.828,-2.828,0.0],[1.532,-3.696,0.0],[0.0,-4.0,0.0],[-1.532,-3.696,0.0],[-2.828,-2.828,0.0],[-3.696,-1.532,0.0],[-4.0,0.0,0.0],\
+    [-3.696,1.532,0.0],[-2.828,2.828,0.0],[-1.532,3.696,0.0],[0.0,4.0,0.0],[0.0,3.696,-1.532],[0.0,2.828,-2.828],[0.0,1.532,-3.696],[0.0,0.0,-4.0],[-1.532,0.0,-3.696],[-2.828,0.0,-2.828],[-3.696,0.0,-1.532],[-4.0,0.0,0.0],[-3.696,0.0,1.532],\
+    [-2.828,0.0,2.828],[-1.532,0.0,3.696],[0.0,0.0,4.0],[1.532,0.0,3.696],[2.828,0.0,2.828],[3.696,0.0,1.532],[4.0,0.0,0.0],[3.696,0.0,-1.532],[2.828,0.0,-2.828],[1.532,0.0,-3.696],[0.0,0.0,-4.0]]
 
-        c = mc.curve(p = pts, d = 3)
-        name = rmm.rename_individual(c, name)
-        rmm.setCurveColor(crvs = name, col = [255,255,0])
-        return name
+    c = mc.curve(p = pts, d = 3)
+    name = rmm.rename_individual(c, name)
+    rmm.setCurveColor(crvs = name, col = [255,255,0])
+    
+    if addToGroup:
+        rmm.rmh_createGroupIfNonExistent(addToGroup)
+        mc.parent(name, addToGroup)
+        
+    return name
+    
+def BWInf_createInitialTransforms(objs = None, addToGroup = None, addControl = True):
         
     if not objs:
         objs = mc.ls(sl = True)
@@ -408,9 +424,9 @@ def BWInf_createInitialTransforms(objs = None, addToGroup = None, addControl = T
             grpName = p_group
         else:
             rig_g = rmm.rmh_createGroupIfNonExistent('rig_g')
-            stdGrp = rmm.rmh_createGroupIfNonExistent('%s_initGrp'%p[0], rig_g)
-            mc.parent(t, addToGroup)
-            grpName = p_group
+            stdGrp = rmm.rmh_createGroupIfNonExistent('%s_initGrp'%objs[0], rig_g)
+            mc.parent(t, stdGrp)
+            grpName = stdGrp
             
         if not grpName in out_groups:
             out_groups.append(grpName)
@@ -421,7 +437,7 @@ def BWInf_createInitialTransforms(objs = None, addToGroup = None, addControl = T
     if addControl:
         ctrl_g = rmm.rmh_createGroupIfNonExistent('ctrl_g')
         for grp in out_groups:
-            ctrl = createControl('%s_ctrl'%(grp.split('_')[0]) )
+            ctrl = BWInf_createControl('%s_ctrl'%(grp.split('_')[0]) )
             
             orig_grp = out_origGroups_dc.get(grp, None)
             if orig_grp:
@@ -506,6 +522,7 @@ def BWInf_createMashFromObjects(objs = None, initGroup = None, mashName = None):
     
     for loc,obj in zip(b_locs, objs):
         mc.parentConstraint(loc, obj)
+        mc.scaleConstraint(loc, obj)
     
     stdVals = {'randEnvelope':0,'randomSeed':1, 'scatterAmpPosX':150,'scatterAmpPosY':50,'scatterAmpPosZ':150, 'scatterAmpRot':100}
     minmaxVals =  {'randEnvelope':[0,1], 'randomSeed':[1,3453454]}
@@ -536,6 +553,101 @@ def BWInf_changeTextOptions(objs = None, t_opts = {'currentFont':'BundesSans' })
         # t3d_extrude = mc.listConnections('%s.outputMesh'%obj)[0]
         BWInf_setOptsByType(t3d_node, t_opts)
 
+def BWInf_text_addScaleControl(textCtrls = None):
+    if not textCtrls:
+        textCtrls = mc.ls(sl = True)
+        
+    mc.undoInfo(ock = True)
+    
+    for ctrl in textCtrls:
+        if not 'typeObjs' in mc.listAttr(ctrl):
+            continue
+        objs = mc.listConnections('%s.typeObjs'%ctrl, d = 0, s = 1)
+        if not objs:
+            continue
+        for obj in objs:
+            cons = mc.listConnections('%s.scaleX'%obj, s = 1, d = 0)
+            if cons:
+                print('BWInf_text_addScaleControl: skip %s'%obj)
+                continue
+            mc.scaleConstraint(ctrl, obj, mo = False)
+
+    mc.undoInfo(cck = True)
+
+def BWInf_MASH_addScaleControl_breakouts(objs = None, mo = False, asConnection = False):
+    def getConnectedLoc(obj):
+        pcs = mc.listRelatives(obj, type = 'parentConstraint')
+        if pcs:
+            cons = mc.listConnections('%s.target'%pcs[0])
+            cons = mc.ls(cons, type = 'transform')
+            if cons:
+                return cons[0]
+            
+        
+    if not objs:
+        objs = mc.ls(sl = True)
+        
+    mc.undoInfo(ock = True)
+    
+    for obj in objs:
+        loc = getConnectedLoc(obj)
+        if not loc:
+            continue
+        
+        cons = mc.listConnections('%s.scaleX'%obj, s = 1, d = 0)
+        if cons:
+            print('BWInf_text_addScaleControl: skip %s'%obj)
+            continue
+        if asConnection:
+            mc.connectAttr('%s.scale'%loc, '%s.scale'%obj)
+        else:
+            mc.scaleConstraint(loc, obj, mo = mo)
+
+    mc.undoInfo(cck = True)
+
+def BWInf_createConnection(objs = None):
+    try:
+        import partyCurveTools
+    except:
+        print('function unavailable')
+        return
+    if not objs:
+        objs = mc.ls(sl = True)
+    
+    # for i in range(0,len(objs) / 2, 2):
+    # obj01, obj02 = objs[i], objs[i+1]
+    
+    out = []
+    for obj in objs:
+        if 'nLoc_rot' in mc.listAttr(obj):
+            con = mc.listConnections('%s.nLoc_rot'%obj, s = 1, d = 0)
+            if con:
+                out.append(con[0])
+                continue
+            out.append(obj)
+    objs = out
+    
+    mc.undoInfo(ock = True)
+    outCrv = partyCurveTools.createCurveBetweenObjects(objs = objs, makeSubCurve = True, createClusters = True, returnClusters = False)
+    outCrv_sub = outCrv + '_sub'
+    rmm.setCurveColor(crvs = [outCrv_sub], col = [255,255,255])
+    rmm.rmh_addSubCurveClipControl([outCrv_sub])
+    
+    centerLoc = partyCurveTools.attachLocatorsAtCurvePoints(follow = False, uValues = [0.5], obj = outCrv, asTransform = False)[0]
+    mc.setAttr('%s.uValue'%centerLoc, 0.5)
+    rmm.connectMessageAttribute(srcs = [outCrv], target = centerLoc, messageAttr = 'crv_main')
+    rmm.connectMessageAttribute(srcs = [outCrv_sub], target = centerLoc, messageAttr = 'crv_sub')
+    
+    stdVals = {'minCurve':0,'maxCurve':1}
+    for attr in ['minCurve','maxCurve']:
+        mc.addAttr(centerLoc, ln = attr, at = 'double',  minValue = 0, maxValue = 1, dv = stdVals.get(attr,0), k = 1)
+        mc.connectAttr('%s.%s'%(centerLoc, attr), '%s.%s'%(outCrv_sub, attr), f = 1)
+    
+    mc.undoInfo(cck = True)
+    
+    
+    
+    
 
 
 class ModelPanelWrapper(QWidget):
