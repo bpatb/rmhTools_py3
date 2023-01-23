@@ -80,13 +80,15 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
         
         unity_infoLabel = QLabel('best practice for unity export:\n- leave Maya units in meter\n- model in cm (1m = 100 units) \n- export in cm')
         
+        #['setupGridForCm', rrt.rmh_setupGridForCm],['adjustCameraSettingsForCm', rrt.rmh_adjustCameraSettingsForCm],\
         optsContext = ['set paths', rrt.rmh_setGameExporterPath], ['set options', rrt.rmh_setGameExporterOptions]
-        unityButtons = pw.createButtonList([['setupGridForCm', rrt.rmh_setupGridForCm],['adjustCameraSettingsForCm', rrt.rmh_adjustCameraSettingsForCm],\
-                                            ['Open GameExporter', self.openGameExporter], ['Auto-Set GameExporter Options\n(right click for steps)', self.gameExporter_setAll, optsContext],\
-                                            ['Goto AssetExportFolder', rrt.rmh_gotoAssetExportFolder],\
+        unityButtons = pw.createButtonList([['Open GameExporter', self.openGameExporter], ['Auto-Set GameExporter Options\n(right click for steps)', self.gameExporter_setAll, optsContext],\
+                                            ['addUnityLightControl', rrt.rmh_addUnityLightControl], ['GameExport via light mult', rrt.rmh_doGameExportWithLightMult],['Goto AssetExportFolder', rrt.rmh_gotoAssetExportFolder],\
                                             ['Add Selection to exportSet', rrt.rmh_addToExportSet],['copyToUnityFolder', rrt.rmh_copyToUnityFolder],\
                                             ], \
-                                            label = 'Unity Export', cols = 1, spacing= 2)   
+                                            label = 'Unity Export', cols = 1, spacing= 2)
+        
+        
         
         bwFachButtons = pw.createButtonList([['shoot bullets (select straight curves)', rmhBW.BWFpf_shootBullet],['BW_scaleNonVisibleToZero', rmhBW.BW_scaleNonVisibleToZero]], \
                                             label = 'BW Fachpflege', cols = 1, spacing = 2)

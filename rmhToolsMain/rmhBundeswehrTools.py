@@ -646,9 +646,39 @@ def BWInf_createConnection(objs = None):
     mc.undoInfo(cck = True)
     
     
+def BWInf_createUValueOffsetAttr(objs = None):
+    if not objs:
+        objs = mc.ls(sl = True)
     
+    mc.undoInfo(ock = True)
     
+    for obj in objs:
+        if not 'uValue' in mc.listAttr(obj):
+            continue
+        val = mc.getAttr('%s.uValue'%obj)
+        for attr in ['uInValue', 'uOffset']:
+            if not attr in mc.listAttr(obj):
+                mc.addAttr(obj, ln = attr, at = 'double', k = 1)
+        mc.setAttr('%s.uInValue'%obj, val)
+        expTx = 'uValue = uInValue + uOffset;'
+        mc.expression(n = '%s_uvalExp'%obj, s = expTx, o = obj)
+        
+    mc.undoInfo(cck = True)
+    
+def BWInf_connectUValueToOffsetObject(srcObj = None, objs = None):
+    if not objs or not srcObj:
+        srcObj = mc.ls(sl = True)[0]
+        objs = mc.ls(sl = True)[1:]
+    
+    mc.undoInfo(ock = True)
+    
+    for obj in objs:
+        print(obj, ':...')
+        if not 'uInValue' in mc.listAttr(obj):
+            continue
+        mc.connectAttr('%s.uValue'%srcObj, '%s.uInValue'%obj , f = 1)
 
+    mc.undoInfo(cck = True)
 
 class ModelPanelWrapper(QWidget):
     def __init__(self, parent = None, name = "customModelPanel#", label="caveCam01", cam='caveCam01', mbv = False, aspect_ratio = [1,1]):

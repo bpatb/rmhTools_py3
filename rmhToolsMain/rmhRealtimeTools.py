@@ -315,4 +315,59 @@ def rmh_copyToUnityFolder(unityDir = None):
     
     
     
+def rmh_addUnityLightControl(lights = None):
+    if not lights:
+        lights = mc.ls(sl = True)
     
+    mc.undoInfo(ock = True)
+    
+    for light in lights:
+        sh = mc.listRelatives(light, s = 1)
+        if not sh:
+            continue
+        lightShape = sh[0]
+        if not 'intensity' in mc.listAttr(lightShape):
+            continue
+        # if not 'unityRange' in mc.listAttr(lightShape):
+        #     continue
+        val = mc.getAttr('%s.intensity'%lightShape)
+        plugs = mc.listConnections('%s.intensity'%lightShape, s = 1, d = 0, p = 1)
+        
+        attrs = ['intensityIn', 'intensityMult', 'unityMult', 'unityRange']
+        stdAttrs = {'intensityIn':val, 'intensityMult':1, 'unityMult':0.01, 'unityRange':10}
+        for attr in attrs:
+            if not attr in mc.listAttr(lightShape):
+                mc.addAttr(lightShape, ln = attr, at = 'double', dv = stdAttrs.get(attr, 0), k = 1)
+        
+        if plugs:
+            mc.connectAttr(plugs[0], '%s.intensityIn'%lightShape, f = 1)
+            mc.disconnectAttr(plugs[0], '%s.intensity'%lightShape)
+            
+        # mult = mc.shadingNode('multiplyDivide', n = '%s_mdiv'%lightShape, asUtility = True)
+        # mc.connectAttr('%s.intensityIn'%lightShape, '%s.input1X'%mult)
+        # mc.connectAttr('%s.intensityMult'%lightShape, '%s.input2X'%mult)
+        # mc.connectAttr('%s.outputX'%mult, '%s.intensity'%lightShape, f = 1)
+        
+        expTx = 'intensity = intensityIn * intensityMult'
+        mc.expression(n = '%s_uExp'%lightShape, s = expTx, o = lightShape)
+    
+    mc.select(lights)
+    mc.undoInfo(cck = True)
+        
+def rmh_doGameExportWithLightMult():
+    lights = mc.ls(type = 'light')
+    
+    mc.undoInfo(ock = True)
+    
+    for light in lights:
+        if 'intensityMult' in mc.listAttr(light):
+            val = mc.getAttr('%s.unityMult'%light)
+            mc.setAttr('%s.intensityMult'%light, val)
+    
+    mel.eval('gameExp_DoExport;')
+    
+    for light in lights:
+        if 'intensityMult' in mc.listAttr(light):
+            mc.setAttr('%s.intensityMult'%light, 1)
+    
+    mc.undoInfo(cck = True)
