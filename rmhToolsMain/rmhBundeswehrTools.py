@@ -387,7 +387,7 @@ def BWInf_createControl(name, addToGroup = None):
         rmm.rmh_createGroupIfNonExistent(addToGroup)
         mc.parent(name, addToGroup)
         
-    return name
+    return name.replace('|', '')
     
 def BWInf_createInitialTransforms(objs = None, addToGroup = None, addControl = True):
         

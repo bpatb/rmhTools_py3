@@ -728,8 +728,27 @@ def rmh_addSubCurveClipControl(subCrvs = None):
         
     mc.undoInfo(cck = True)
 
-
+def rmh_renameAfterParent(objs = None, suffix = '_o'):
+    if not objs:
+        objs = mc.ls(sl = True)
     
+    sortDc = {}
+    for obj in objs:
+        p = mc.listRelatives(obj, p = 1)
+        if not p:
+            continue
+        p = p[0]
+        if not p in sortDc.keys():
+            sortDc[p] = []
+        sortDc[p].append(obj)
+    
+    mc.undoInfo(ock = True)
+    for p in sortDc.keys():
+        _objs = sortDc[p]
+        for child in _objs:
+            rename_individual(child, '%s%s'%(p,suffix))
+    
+    mc.undoInfo(cck = True)
 
 def attachCubesToObjects(objs = None, cSize = 1): #weil nuke keine locator importiert
     if not objs:
