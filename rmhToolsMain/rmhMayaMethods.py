@@ -769,7 +769,51 @@ def attachCubesToObjects(objs = None, cSize = 1): #weil nuke keine locator impor
     mc.undoInfo(cck = True)
     
     return out
+
+
+
+def rmh_makeDistanceArray(refObject, objectArray, useScalePivot = False, useCurveCenter = True, maxDistance = None, skipConnected = False, skipArray = []): # von klein zu gross
+    def magnitude(v):
+        return math.sqrt(sum(v[i]*v[i] for i in range(len(v))))
+    def sub(u, v):
+        return [ u[i]-v[i] for i in range(len(u)) ]
+    if useScalePivot:
+        refPos = mc.xform('%s.scalePivot'%refObject, ws = True, q = True, t = True)
+    else:
+        refPos = mc.xform(refObject, ws = True, q = True, t = True)
+
+    sortArray = []
+    for obj in objectArray:
+        if refObject == obj:
+            continue
+        if [refObject, obj] in skipArray:
+            continue
+        objSh = mc.listRelatives(obj, s = True)
+        if useScalePivot:
+            objPos = mc.xform('%s.scalePivot'%obj, ws = True, q = True, t = True)
+        elif objSh and mc.objectType(objSh[0]) == 'nurbsCurve' and useCurveCenter:
+            rng = mc.getAttr('%s.minMaxValue'%obj)[0][1]
+            objPos = mc.pointPosition('%s.u[%.3f]'%(obj, rng/2), w = True)
+        else:
+            objPos = mc.xform(obj, ws = True, q = True, t = True)
+        # print obj
+        sh = mc.listRelatives(refObject, s = True)
+        if sh and mc.objectType(sh[0]) == 'nurbsCurve' and useCurveCenter:
+            rng = mc.getAttr('%s.minMaxValue'%refObject)[0][1]
+            refPos = mc.pointPosition('%s.u[%.3f]'%(refObject, rng/2), w = True)
+            # print 'using crv:' , refPos
         
+        
+        dist = magnitude(sub(objPos, refPos))
+        if maxDistance and dist > maxDistance:
+            continue
+        # print obj, mc.listConnections('%s.translateX'%obj, s = 1, d = 0)
+        if skipConnected and mc.listConnections('%s.translateX'%obj, s = 1, d = 0):
+            continue
+        sortArray.append([dist, obj])
+    sortArray.sort(key=lambda x:x[0] )
+    return [x[1] for x in sortArray]
+
 def getMainWindow():
     global app
     app = QApplication.instance()

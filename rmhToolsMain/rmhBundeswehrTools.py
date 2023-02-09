@@ -628,6 +628,7 @@ def BWInf_createConnection(objs = None):
     objs = out
     
     mc.undoInfo(ock = True)
+    
     outCrv = partyCurveTools.createCurveBetweenObjects(objs = objs, makeSubCurve = True, createClusters = True, returnClusters = False)
     outCrv_sub = outCrv + '_sub'
     rmm.setCurveColor(crvs = [outCrv_sub], col = [255,255,255])
@@ -642,6 +643,26 @@ def BWInf_createConnection(objs = None):
     for attr in ['minCurve','maxCurve']:
         mc.addAttr(centerLoc, ln = attr, at = 'double',  minValue = 0, maxValue = 1, dv = stdVals.get(attr,0), k = 1)
         mc.connectAttr('%s.%s'%(centerLoc, attr), '%s.%s'%(outCrv_sub, attr), f = 1)
+    
+    mc.undoInfo(cck = True)
+    
+
+def BWInf_createConnection_simple(objs = None):
+    try:
+        import partyCurveTools
+    except:
+        print('function unavailable')
+        return
+    
+    if not objs:
+        objs = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    
+    outCrv = partyCurveTools.createCurveBetweenObjects(objs = objs, makeSubCurve = True, createClusters = True, returnClusters = False)
+    outCrv_sub = outCrv + '_sub'
+    rmm.setCurveColor(crvs = [outCrv_sub], col = [255,255,255])
+    # rmm.rmh_addSubCurveClipControl([outCrv_sub])
     
     mc.undoInfo(cck = True)
     
@@ -679,6 +700,126 @@ def BWInf_connectUValueToOffsetObject(srcObj = None, objs = None):
         mc.connectAttr('%s.uValue'%srcObj, '%s.uInValue'%obj , f = 1)
 
     mc.undoInfo(cck = True)
+
+def BWInf_sortAndConnectManyToMany(objs = None, mo = True):
+    def checkType(obj):
+        sh = mc.listRelatives(obj, s = 1)
+        if sh:
+            return mc.objectType(sh[0])
+    
+    if not objs:
+        objs = mc.ls(sl = True)
+    
+    locs = [o for o in objs if checkType(o) == 'locator']
+    meshes = [o for o in objs if checkType(o) == 'mesh']
+    
+    if len(locs) != len(meshes):
+        mc.warning('len locs != meshes')
+        return
+    
+    locs.sort()
+    meshes.sort()
+    
+    mc.undoInfo(ock = True)
+    
+    for loc, mesh in zip(locs, meshes):
+        print(loc, 'to', mesh)
+        mc.parentConstraint(loc, mesh, mo = mo)
+        mc.scaleConstraint(loc, mesh, mo = mo)
+        
+    mc.undoInfo(cck = True)
+    
+    
+def BWInf_distributeToObjects():
+    sel = mc.ls(sl = True)
+    srcs = sel[:int(len(sel) / 2)]
+    dests = sel[int(len(sel) / 2):]
+    
+    mc.undoInfo(ock = True)
+    for src, dest in zip(srcs, dests):
+        pc = mc.parentConstraint(dest, src, mo = False)
+        mc.delete(pc)
+    mc.undoInfo(cck = True)
+
+def BWInf_createLineExportObjects(crvs = None):
+    def createAndAttachToCurve(_loc, _crv, asTransform = True):
+        if asTransform:
+            mc.createNode('transform', n = _loc)
+        else:
+            mc.spaceLocator(n = _loc)
+        mpath = mc.pathAnimation(_loc, _crv, fm = True, follow = False, ua = 'y', worldUpType = 'vector', worldUpVector = (0,1,0))#, iu = False, if = False, bank = False, startTimeU = 0)
+        mc.cutKey('%s.uValue'%mpath, t = (-1,10000))
+        mc.addAttr(_loc, ln = 'uVal', at = 'double', k = 1)
+        mc.connectAttr('%s.uVal'%_loc, '%s.uValue'%mpath)
+        
+    if not crvs:
+        crvs = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    
+    grp = rmm.rmh_createGroupIfNonExistent('lineAnimExport_grp')
+    
+    for crv in crvs:
+        if not 'minCurve' in mc.listAttr(crv):
+            continue
+        if not 'origCurve' in mc.listAttr(crv):
+            continue
+        loc01 = '%s_curvePos01'%crv
+        loc02 = '%s_curvePos02'%crv
+        if mc.objExists(loc01):
+            print('%s exists'%loc01)
+            continue
+        
+        origCurve = mc.listConnections('%s.origCurve'%crv, s = 1, d = 0)[0]
+        
+        createAndAttachToCurve(loc01, origCurve)
+        mc.connectAttr('%s.minCurve'%crv, '%s.uVal'%loc01, f = 1)
+        createAndAttachToCurve(loc02, origCurve)
+        mc.connectAttr('%s.maxCurve'%crv, '%s.uVal'%loc02, f = 1)
+        
+        mc.parent(loc01, grp)
+        mc.parent(loc02, grp)
+        
+    mc.undoInfo(cck = True)
+
+def BWInf_createNeuralConnections(objs = None, maxDistance = None, objsToConsider = None, shuffleResult = True, numCons = None):
+    if not objs:
+        objs = mc.ls(sl = True)
+    
+    if not objsToConsider:
+        objsToConsider, ok =  QInputDialog.getInt(None, 'BWInf_createNeuralConnections', 'objsToConsider', value = 5, min = 1, max = 15)
+        if not ok:
+            return
+    if not numCons:
+        numCons, ok =  QInputDialog.getInt(None, 'BWInf_createNeuralConnections', 'numCons', value = 1, min = 1, max = 15)
+        if not ok:
+            return
+        
+    mc.undoInfo(ock = True)
+    
+    mc.progressWindow( title='BWInf_createNeuralConnections', progress=0,status='also...',isInterruptable=True,min = 0,  max = len(objs))
+    
+    skipArray = []
+    for j, obj in enumerate(objs):
+        if mc.progressWindow( query=True, isCancelled=True):
+            return
+        distArray = rmm.rmh_makeDistanceArray(obj, objs, useScalePivot = False, useCurveCenter = True, maxDistance = maxDistance, skipConnected = False, skipArray = skipArray)
+        nextObjs = distArray[:objsToConsider]
+        
+        if shuffleResult:
+            random.shuffle(nextObjs)
+            
+        for i in range(numCons):
+            if i+1<=len(nextObjs):
+                nextObj = nextObjs[i]
+                BWInf_createConnection_simple([obj, nextObj])
+                skipArray.append([obj, nextObj])
+                skipArray.append([nextObj, obj])
+        mc.progressWindow( edit=True, progress=j, status='obj %d of %d'%(j, len(objs)))
+    
+    mc.progressWindow( ep=True)
+    mc.undoInfo(cck = True)
+    
 
 class ModelPanelWrapper(QWidget):
     def __init__(self, parent = None, name = "customModelPanel#", label="caveCam01", cam='caveCam01', mbv = False, aspect_ratio = [1,1]):

@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from six.moves import range
+from importlib import reload
 try:
     from PySide2.QtGui import *
-from importlib import reload
     from PySide2.QtCore import *
     from PySide2.QtWidgets import *
     from shiboken2 import wrapInstance
@@ -30,10 +30,10 @@ def RS_storeOptions(dc, storeNode = 'time1', attrName = 'RSBakeOpts'):
     dc_old = {}
     tx = mc.getAttr('%s.%s'%(storeNode, attrName))
     if tx:
-        dc_old = pickle.loads(tx)
+        dc_old = pickle.loads(bytes(tx, 'latin-1'))
     
     dc_old.update(dc)
-    tx = pickle.dumps(dc_old)
+    tx = str(pickle.dumps(dc_old, protocol=0), 'latin-1')
     mc.setAttr('%s.%s'%(storeNode, attrName), tx, type = 'string')
     # print 'rs bake opts stored'
 
@@ -43,7 +43,7 @@ def RS_getOptions(storeNode = 'time1', attrName = 'RSBakeOpts'):
     dc = {}
     tx = mc.getAttr('%s.%s'%(storeNode, attrName))
     if tx:
-        dc = pickle.loads(tx)
+        dc = pickle.loads(bytes(tx, 'latin-1'))
     return dc
 
 def RS_setupForBaking(dirName = '_bakeTest'):
@@ -425,7 +425,7 @@ class BT_ListWidget(QListWidget):
             return
         tx = mc.getAttr('%s.shaderAssignmentGroups'%node)
         if tx:
-            sa_metaDict = pickle.loads(tx)
+            sa_metaDict = pickle.loads(bytes(tx, 'latin-1'))
             self.loadFromDict(sa_metaDict)
         
     def selectFile(self, file):
@@ -491,7 +491,8 @@ class BT_ListWidget(QListWidget):
             sa_dict = item.sa_dict
             dc[name] = sa_dict
             
-        tx = pickle.dumps(dc)
+        # tx = pickle.dumps(dc)
+        tx = str(pickle.dumps(dc, protocol=0), 'latin-1')
         mc.setAttr('%s.shaderAssignmentGroups'%node, tx, type = 'string')
     
     def loadOptions(self):
@@ -501,7 +502,7 @@ class BT_ListWidget(QListWidget):
         tx = mc.getAttr('%s.shaderAssignmentGroups'%node)
         if not tx:
             return
-        sa_metaDict = pickle.loads(tx)
+        sa_metaDict = pickle.loads(bytes(tx, 'latin-1'))
         self.loadFromDict(sa_metaDict)
         
     
@@ -529,6 +530,8 @@ class RS_BakingToolsDialog(QDialog):
         updBut = pw.makeButton('upd', self.updateOutPath)
         # self.list = BT_ListWidget()
         
+        label = QLabel('input color space for textures may need\nto be set to "raw" (esp. for surface shader)')
+        
         outPathLayout = pw.makeBoxLayout([QLabel('images/_baking/'), self.outPathLine,updBut], stretchArray = [0,1,0], vertical = 0)
         
         # buts00 = [pw.makeButton('setup RS for baking', self.RS_setupForBaking_UI),pw.makeButton('assign baking set', RS_assignRedshiftBakeSet),\
@@ -550,7 +553,7 @@ class RS_BakingToolsDialog(QDialog):
         butLayout03 = pw.makeBoxLayout(buts03, vertical = True, spacing = 3)
         
         # mainLayout = pw.makeBoxLayout([butLayout00, bakeOptsLayout, butLayout01, butLayout02],stretchArray = [0,0,0,0,0])
-        mainLayout = pw.makeBoxLayout([outPathLayout, butLayout00, butLayout01, butLayout02, QWidget(), butLayout03],stretchArray = [0,0,0,0,1,0])
+        mainLayout = pw.makeBoxLayout([outPathLayout, label, butLayout00, butLayout01, butLayout02, QWidget(), butLayout03],stretchArray = [0,0,0,0,0,1,0])
         
         self.setLayout(mainLayout)
         self.setWindowTitle('RS BakingTools')
@@ -620,7 +623,18 @@ def RS_showBakingToolsDialog():
             __main__.bakingToolsDialog.close()
         except Exception:
             pass
-    mayaWin = pmm.getMainWindow2()
+        
+    def getMainWindow():
+        import maya.OpenMayaUI as apiUI
+        global app
+        app = QApplication.instance()
+        
+        ptr = apiUI.MQtUtil.mainWindow()
+        win = wrapInstance(int(ptr), QWidget)
+        
+        return win
+    mayaWin = getMainWindow()
+    
     __main__.bakingToolsDialog = RS_BakingToolsDialog(mayaWin)
     __main__.bakingToolsDialog.show()
     
