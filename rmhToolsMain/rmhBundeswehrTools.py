@@ -741,7 +741,7 @@ def BWInf_distributeToObjects():
         mc.delete(pc)
     mc.undoInfo(cck = True)
 
-def BWInf_createLineExportObjects(crvs = None):
+def BWInf_createLineExportObjects(crvs = None): ### for sub curve anim // nnetz
     def createAndAttachToCurve(_loc, _crv, asTransform = True):
         if asTransform:
             mc.createNode('transform', n = _loc)
@@ -820,7 +820,43 @@ def BWInf_createNeuralConnections(objs = None, maxDistance = None, objsToConside
     mc.progressWindow( ep=True)
     mc.undoInfo(cck = True)
     
-
+def BWInf_createLineTransform_perCV(crvs = None): ### for sub curve anim // nnetz
+    def createTransform(name, pos, grp):
+        if mc.objExists(name):
+            mc.delete(name)
+            print('%s deleted'%name)
+        mc.createNode('transform', n = name)
+        mc.move(*pos)
+        mc.parent(name, grp)
+        return name
+        
+    if not crvs:
+        crvs = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    
+    grp = rmm.rmh_createGroupIfNonExistent('lineTransforms_grp')
+    
+    for crv in crvs:
+        subGrp = '%s_points'%crv
+        if mc.objExists(subGrp):
+            mc.delete(subGrp)
+            print('%s deleted'%subGrp)
+        mc.group(n = subGrp, empty = True)
+        mc.parent(subGrp, grp)
+        
+        numCv = mc.getAttr('%s.spans'%crv)+mc.getAttr('%s.degree'%crv)
+        for cv in range(numCv):
+            pos = mc.pointPosition('%s.cv[%d]'%(crv, cv), w= 1)
+            createTransform('%s_cv%04d'%(crv, cv), pos, subGrp)
+            
+        
+    mc.undoInfo(cck = True)
+    
+    
+    
+    
+    
 class ModelPanelWrapper(QWidget):
     def __init__(self, parent = None, name = "customModelPanel#", label="caveCam01", cam='caveCam01', mbv = False, aspect_ratio = [1,1]):
         super(ModelPanelWrapper, self).__init__(parent)
