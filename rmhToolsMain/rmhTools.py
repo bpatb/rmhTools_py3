@@ -100,7 +100,8 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
         bwInfButtons = pw.createButtonList([['BWInf - create text', rmhBW.BWInf_textListToType], ['BWInf - splitObjects', rmhBW.BWInf_splitObjects],\
                                             ['BWInf - createMashFromObjects', rmhBW.BWInf_createMashFromObjects], ['BWInf - makeGyroConnections', rmhBW.BWInf_makeGyroConnections],\
                                             ['BWInf - setRandomValues', rmhBW.BWInf_gyro_setRandomValues],['BWInf - createConnection (NNetz)', rmhBW.BWInf_createConnection],\
-                                            ['BWInf - createLineTransform_perCV', rmhBW.BWInf_createLineTransform_perCV]], \
+                                            ['BWInf - createNeuralConnections (many2many)', rmhBW.BWInf_createNeuralConnections],['BWInf - createLineTransform_perCV', rmhBW.BWInf_createLineTransform_perCV],\
+                                            ['BWInf - createSweepMeshes', rmhBW.BWInf_createSweepMeshes]], \
                                             label = 'BW Inf', cols = 1, spacing = 2)
         
         
