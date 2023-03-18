@@ -37,6 +37,7 @@ reload(vai)
 reload(acm)
 reload(rrt)
 reload(rmm)
+reload(rmhBW)
 
 class VaillantTab(QWidget):
     def __init__(self, parent = None):
@@ -89,13 +90,18 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
                                             label = 'Unity Export', cols = 1, spacing= 2)
         
         
+        caveButtons = pw.createButtonList([['Cave Simulator', rmhBW.showCavePreviewDialog]], \
+                                            label = 'CAVE Tools', cols = 1, spacing= 2)
+        
         
         bwFachButtons = pw.createButtonList([['shoot bullets (select straight curves)', rmhBW.BWFpf_shootBullet],['BW_scaleNonVisibleToZero', rmhBW.BW_scaleNonVisibleToZero]], \
                                             label = 'BW Fachpflege', cols = 1, spacing = 2)
         
         bwInfButtons = pw.createButtonList([['BWInf - create text', rmhBW.BWInf_textListToType], ['BWInf - splitObjects', rmhBW.BWInf_splitObjects],\
                                             ['BWInf - createMashFromObjects', rmhBW.BWInf_createMashFromObjects], ['BWInf - makeGyroConnections', rmhBW.BWInf_makeGyroConnections],\
-                                            ['BWInf - setRandomValues', rmhBW.BWInf_gyro_setRandomValues],['BWInf - createConnection', rmhBW.BWInf_createConnection]], \
+                                            ['BWInf - setRandomValues', rmhBW.BWInf_gyro_setRandomValues],['BWInf - createConnection (NNetz)', rmhBW.BWInf_createConnection],\
+                                            ['BWInf - createNeuralConnections (many2many)', rmhBW.BWInf_createNeuralConnections],['BWInf - createLineTransform_perCV', rmhBW.BWInf_createLineTransform_perCV],\
+                                            ['BWInf - createSweepMeshes', rmhBW.BWInf_createSweepMeshes]], \
                                             label = 'BW Inf', cols = 1, spacing = 2)
         
         
@@ -118,8 +124,7 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
         # exportSetButtons = pw.createButtonList([['create set', rrt.rmh_createExportSet],['add to set', rrt.rmh_addToExportSet]], \
         #                                     label = 'Export Set', cols = 2, spacing= 2)   
         
-        reload(rmhBW)
-        realtimeLayout = pw.makeBoxLayout([glbButtons,mashButtons,unity_infoLabel,unityButtons,QWidget()],stretchArray = [0,0,0,0,1], alsWidget = True)
+        realtimeLayout = pw.makeBoxLayout([glbButtons,mashButtons,unity_infoLabel,unityButtons,caveButtons,QWidget()],stretchArray = [0,0,0,0,0,1], alsWidget = True)
         
         # bundeswehrLayout = pw.makeBoxLayout([bwFachButtons,QWidget()],stretchArray = [0,1], alsWidget = True)
         # 

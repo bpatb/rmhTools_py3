@@ -741,7 +741,7 @@ def BWInf_distributeToObjects():
         mc.delete(pc)
     mc.undoInfo(cck = True)
 
-def BWInf_createLineExportObjects(crvs = None):
+def BWInf_createLineExportObjects(crvs = None): ### for sub curve anim // nnetz
     def createAndAttachToCurve(_loc, _crv, asTransform = True):
         if asTransform:
             mc.createNode('transform', n = _loc)
@@ -820,7 +820,112 @@ def BWInf_createNeuralConnections(objs = None, maxDistance = None, objsToConside
     mc.progressWindow( ep=True)
     mc.undoInfo(cck = True)
     
+def BWInf_createLineTransform_perCV(crvs = None): ### for sub curve anim // nnetz
+    def createTransform(name, pos, grp):
+        if mc.objExists(name):
+            mc.delete(name)
+            print('%s deleted'%name)
+        mc.createNode('transform', n = name)
+        mc.move(*pos)
+        mc.parent(name, grp)
+        return name
+        
+    if not crvs:
+        crvs = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    
+    grp = rmm.rmh_createGroupIfNonExistent('lineTransforms_grp')
+    
+    for crv in crvs:
+        subGrp = '%s_points'%crv
+        if mc.objExists(subGrp):
+            mc.delete(subGrp)
+            print('%s deleted'%subGrp)
+        mc.group(n = subGrp, empty = True)
+        mc.parent(subGrp, grp)
+        
+        numCv = mc.getAttr('%s.spans'%crv)+mc.getAttr('%s.degree'%crv)
+        for cv in range(numCv):
+            pos = mc.pointPosition('%s.cv[%d]'%(crv, cv), w= 1)
+            createTransform('%s_cv%04d'%(crv, cv), pos, subGrp)
+            
+        
+    mc.undoInfo(cck = True)
+    
+def BWInf_attachLocatorsToVertices(objs = None):
+    if not objs:
+        objs = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    
+    for obj in objs:
+        vcount = mc.polyEvaluate(obj, v = True)
+        for idx in range(vcount):
+            pos = mc.pointPosition('%s.vtx[%d]'%(obj, idx))
+            loc = mc.spaceLocator(n = 'loc_%s_vtx%03d'%(obj, idx))[0]
+            mc.move(*pos)
+    
+    mc.undoInfo(cck = True)
 
+def BWInf_removeDuplicateCurveCVs(crvs = None, onlySelect = True, thresh = 0.01):
+    def mag(v):
+        return math.sqrt(sum(v[i]*v[i] for i in range(len(v))))
+    def sub(u, v):
+        return [ u[i]-v[i] for i in range(len(u)) ]
+    
+    if not crvs:
+        crvs = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    
+    out = []
+    for crv in crvs:
+        cvNum = mc.getAttr('%s.spans'%crv)+ mc.getAttr('%s.degree'%crv)
+        for i in range(cvNum-1):
+            thisPos = mc.pointPosition('%s.cv[%d]'%(crv, i), w = 1)
+            nextPos = mc.pointPosition('%s.cv[%d]'%(crv, i+1), w = 1)
+            if mag(sub(thisPos, nextPos)) < thresh:
+                if onlySelect:
+                    out.append('%s.cv[%d]'%(crv, i+1))
+                else:
+                    mc.delete('%s.cv[%d]'%(crv, i+1))
+    if out:
+        mc.select(out)
+    mc.undoInfo(cck = True)
+
+def BWInf_createSweepMeshes(crvs = None):
+    if not crvs:
+        crvs = mc.ls(sl = True)
+    
+    mesh_g = rmm.rmh_createGroupIfNonExistent('curveMeshes')
+    widthCtrl = 'tubeWidth_ctrl'
+    mc.undoInfo(ock = True)
+    for crv in crvs:
+        meshName = '%s_mesh'%crv
+        if mc.objExists(meshName):
+            print(meshName, 'exists')
+            continue
+        mc.sweepMeshFromCurve(crv)
+        crvShape = mc.listRelatives(crv, s = 1)[0]
+        hist = mc.listHistory(crvShape, future = True)
+        sweepShape = [s for s in hist if mc.objectType(s) == 'mesh' and 'sweep' in s.lower()][0]
+        sweepNode = [s for s in hist if mc.objectType(s) == 'sweepMeshCreator'][0]
+        mc.setAttr('%s.interpolationMode'%sweepNode, 0)
+        mc.setAttr('%s.interpolationOptimize'%sweepNode, 1)
+        mc.setAttr('%s.capsEnable'%sweepNode, 1)
+        sweepTrans = mc.listRelatives(sweepShape, p = 1)[0]
+        mc.xform(sweepTrans, cp = True)
+        
+        if mc.objExists(widthCtrl):
+            mc.connectAttr('%s.outValue'%widthCtrl, '%s.scaleProfileX'%sweepNode, f = 1)
+        
+        sweepTrans = rmm.rename_individual(sweepTrans, meshName)
+        mc.parent(sweepTrans, mesh_g)
+    
+    mc.undoInfo(cck = True)
+    
+    
 class ModelPanelWrapper(QWidget):
     def __init__(self, parent = None, name = "customModelPanel#", label="caveCam01", cam='caveCam01', mbv = False, aspect_ratio = [1,1]):
         super(ModelPanelWrapper, self).__init__(parent)
