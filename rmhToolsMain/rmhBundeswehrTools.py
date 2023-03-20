@@ -820,7 +820,7 @@ def BWInf_createNeuralConnections(objs = None, maxDistance = None, objsToConside
     mc.progressWindow( ep=True)
     mc.undoInfo(cck = True)
     
-def BWInf_createLineTransform_perCV(crvs = None): ### for sub curve anim // nnetz
+def BWInf_createLineTransform_perCV(crvs = None, groupTo = None): ### for sub curve anim // nnetz
     def createTransform(name, pos, grp):
         if mc.objExists(name):
             mc.delete(name)
@@ -835,23 +835,28 @@ def BWInf_createLineTransform_perCV(crvs = None): ### for sub curve anim // nnet
     
     mc.undoInfo(ock = True)
     
-    grp = rmm.rmh_createGroupIfNonExistent('lineTransforms_grp')
+    grp = rmm.rmh_createGroupIfNonExistent('lineTransforms_grp') if not groupTo else groupTo
     
+    outLocs = []
     for crv in crvs:
-        subGrp = '%s_points'%crv
-        if mc.objExists(subGrp):
+        subGrp = '%s_points'%crv if not groupTo else groupTo
+        if mc.objExists(subGrp) and not groupTo:
             mc.delete(subGrp)
             print('%s deleted'%subGrp)
-        mc.group(n = subGrp, empty = True)
-        mc.parent(subGrp, grp)
+        
+        if not groupTo:
+            mc.group(n = subGrp, empty = True)
+            mc.parent(subGrp, grp)
         
         numCv = mc.getAttr('%s.spans'%crv)+mc.getAttr('%s.degree'%crv)
         for cv in range(numCv):
             pos = mc.pointPosition('%s.cv[%d]'%(crv, cv), w= 1)
-            createTransform('%s_cv%04d'%(crv, cv), pos, subGrp)
+            trans = createTransform('%s_cv%04d'%(crv, cv), pos, subGrp)
+            outLocs.append(trans)
             
-        
     mc.undoInfo(cck = True)
+    
+    return outLocs
     
 def BWInf_attachLocatorsToVertices(objs = None):
     if not objs:
@@ -894,7 +899,7 @@ def BWInf_removeDuplicateCurveCVs(crvs = None, onlySelect = True, thresh = 0.01)
         mc.select(out)
     mc.undoInfo(cck = True)
 
-def BWInf_createSweepMeshes(crvs = None):
+def BWInf_createSweepMeshes(crvs = None, attachCvTrans = True):
     if not crvs:
         crvs = mc.ls(sl = True)
     
@@ -904,8 +909,8 @@ def BWInf_createSweepMeshes(crvs = None):
     for crv in crvs:
         meshName = '%s_mesh'%crv
         if mc.objExists(meshName):
-            print(meshName, 'exists')
-            continue
+            print(meshName, 'exists - delete')
+            mc.delete(meshName)
         mc.sweepMeshFromCurve(crv)
         crvShape = mc.listRelatives(crv, s = 1)[0]
         hist = mc.listHistory(crvShape, future = True)
@@ -922,6 +927,9 @@ def BWInf_createSweepMeshes(crvs = None):
         
         sweepTrans = rmm.rename_individual(sweepTrans, meshName)
         mc.parent(sweepTrans, mesh_g)
+        
+        if attachCvTrans:
+            BWInf_createLineTransform_perCV([crv], meshName)
     
     mc.undoInfo(cck = True)
     
