@@ -278,20 +278,37 @@ def rmh_setGameExporterOptions():
     mc.setAttr('gameExporterPreset3.selectionSetName', "exportSet", type = 'string')
     return
 
+
+def rmh_getTimeVar(attr):
+    if attr in mc.listAttr('time1'):
+        return mc.getAttr('time1.%s'%attr)
+
+def rmh_setTimeVar(attr, val, atType = 'string'):
+    if not attr in mc.listAttr('time1'):
+        if atType == 'string':
+            mc.addAttr('time1', ln = attr, dt = 'string')
+        else:
+            mc.addAttr('time1', ln = attr, at = atType, k = 1)
+    
+    if atType == 'string':
+        mc.setAttr('time1.%s'%attr, val, type = 'string')
+    else:
+        mc.setAttr('time1.%s'%attr, val)
+            
+    
 def rmh_copyToUnityFolder(unityDir = None):
     assetDir, sceneBase = rmh_getAssetDir()
     fileList = os.listdir(assetDir)
     fileList = [os.path.join(assetDir, f).replace('/', '\\') for f in fileList if f.split('.')[-1].lower() == 'fbx' and sceneBase in f]
     
-    # sourcePath = os.path.join(assetDir, sceneBase+'.fbx')
-    # if not os.path.isfile(sourcePath):
-    #     mc.error('%s does not exist'%sourcePath)
     if not fileList:
         print('rmh_copyToUnityFolder --- no files with base %s found in %s'%(sceneBase, assetDir))
         return
     
+    lastUnityDir = None
     if mc.optionVar( exists='unityExportDir' ):
-        lastUnityDir = mc.optionVar( q='unityExportDir' )
+        lastDir = rmh_getTimeVar('unityExportDir')
+        lastUnityDir = mc.optionVar( q='unityExportDir' ) if not lastDir else lastDir
         res = mc.confirmDialog(title='copyToUnityFolder',message='use %s?'%lastUnityDir,button=['Yes', 'No', 'Cancel'])
         if res == 'Cancel':
             return
@@ -299,12 +316,13 @@ def rmh_copyToUnityFolder(unityDir = None):
             unityDir = lastUnityDir
             
     if not unityDir:
-        unityDir = mc.fileDialog2(fm = 3)
+        unityDir = mc.fileDialog2(fm = 3, dir = lastUnityDir)
         if not unityDir:
             return
         else:
             unityDir = unityDir[0].replace('/','\\')
     
+    rmh_setTimeVar('unityExportDir', unityDir, 'string')
     mc.optionVar( sv=('unityExportDir', unityDir))
     
     for sourcePath in fileList:
