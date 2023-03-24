@@ -1,0 +1,34 @@
+set cut_paste_input [stack 0]
+version 11.1 v1
+Read {
+ inputs 0
+ format "960 540 0 0 960 540 1 "
+ file $inFile$
+ last $seqLength$
+ origlast $seqLength$
+ origset true
+ name Read3
+ selected true
+ xpos -684
+ ypos 51
+}
+Dilate {
+ size -7.5
+ name Dilate1
+ selected true
+ xpos -684
+ ypos 198
+}
+Write {
+ file $outFile$
+ file_type png
+ create_directories true
+ last $seqLength$
+ use_limit true
+ checkHashOnRead false
+ version 1
+ name Write2
+ selected true
+ xpos -684
+ ypos 236
+}

@@ -1055,3 +1055,44 @@ def showCavePreviewDialog():
         mc.deleteUI('CavePreviewUI')
     __main__.CavePreviewUIDialog.show(dockable = True, area=None,  width=400, floating=False)
     __main__.CavePreviewUI_UI = __main__.CavePreviewUIDialog
+    
+    
+
+def RMH_addSphericalProjectionRigs(filePaths = None):
+    def returnShortName(name):
+        name = name.split('.')[0]
+        name = name.replace('-', '_').replace(' ', '')
+        if len(name) > 8:
+            name = name[:4] + '_' + name[-4:]
+        return name
+    
+    if not filePaths:
+        filePaths = mc.fileDialog2(fm = 4, cap = 'RMH_addSphericalProjectionRigs: choose image files')
+        if not filePaths:
+            return
+    
+    mc.undoInfo(ock = True)
+    
+    for filePath in filePaths:
+        base = os.path.basename(filePath)
+        base = 'sphRig_' + returnShortName(base)
+        before = set(mc.ls(assemblies = True))
+        fileDir = os.path.dirname(os.path.realpath(__file__))
+        fileDir = fileDir.replace('\\', '/')
+        baseDir = '/'.join(fileDir.split('/')[:-1])
+        assetPath = '%s/_assets/sphPrjRig.mb'%baseDir
+        
+        mc.file(assetPath, r = True, ignoreVersion = True, options = "v=0;" , mergeNamespacesOnClash = False, namespace = base, pr = True )
+        after = set(mc.ls(assemblies = True))
+        loc= list(after.difference(before))[0]
+        # loc = rmm.rename_individual(loc, 'sphRig_' + base)
+        fileNode = mc.listConnections('%s.fileNode'%loc, s = 1, d = 0)[0]
+        mc.setAttr('%s.fileTextureName'%fileNode, filePath, type = 'string')
+        
+    mc.undoInfo(cck = True)
+        
+        
+        
+        
+        
+    
