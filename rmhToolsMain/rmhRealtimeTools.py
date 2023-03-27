@@ -196,6 +196,24 @@ def exportToUnity(outPath = None):
     mc.editRenderLayerGlobals( currentRenderLayer='defaultRenderLayer' )
     mc.delete(tempRL)
     print(fbxPath)
+
+
+def rmh_gameExporter_setAll():
+    sceneName = mc.file( q = True, sn = True, shn = True).split('.')[0]
+    if not sceneName:
+        mc.confirmDialog(title='gameExporter_setAll',message='file needs to be saved first',button=['Ok'])
+        return
+    rmh_setGameExporterPath()
+    rmh_setGameExporterOptions()
+    
+def rmh_openGameExporter():
+    currentUnit = mc.currentUnit(q = True, linear = True)
+    if currentUnit != 'm' and not mc.optionVar( exists='openGameExporter_dontShowUnitWarning' ):
+        res = mc.confirmDialog(title='openGameExporter',message='current unit is not m, you will have to set the asset scale in Unity',button=['Ok', 'Don\'t show again'])
+        if res != 'Ok':
+            mc.optionVar( iv=('openGameExporter_dontShowUnitWarning', 1))
+    
+    mel.eval('gameFbxExporter')
     
 def rmh_getAssetDir():
     sceneName = mc.file( q = True, sn = True, shn = True).split('.')[0]
