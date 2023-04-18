@@ -830,4 +830,92 @@ def getMainWindow2(): # functions better in Maya 2017
                 return obj
     except:
         raise RuntimeError('Could not find MayaWindow instance')
+
+def rmh_setMaterial_diffuse():
+    mats = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    for mat in mats:
+        if not 'diffuse_weight' in mc.listAttr(mat):
+            continue
+        mc.setAttr('%s.diffuse_weight'%mat, 1)
+        mc.setAttr('%s.emission_weight'%mat, 0)
+    mc.undoInfo(cck = True)
+        
+def rmh_setMaterial_emission():
+    mats = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    for mat in mats:
+        if not 'diffuse_weight' in mc.listAttr(mat):
+            continue
+        mc.setAttr('%s.diffuse_weight'%mat, 0)
+        mc.setAttr('%s.emission_weight'%mat, 1)
+    mc.undoInfo(cck = True)
+        
+
+def RMHSummit_createSweepMeshes(crvs = None, profile = 'wallProfile'):
+    if not crvs:
+        crvs = mc.ls(sl = True)
+    
+    mesh_g = rmh_createGroupIfNonExistent('curveMeshes')
+    widthCtrl = 'tubeWidth_ctrl'
+    out = []
+    mc.undoInfo(ock = True)
+    for crv in crvs:
+        meshName = '%s_mesh'%crv
+        if mc.objExists(meshName):
+            print(meshName, 'exists - delete')
+            mc.delete(meshName)
+        mc.sweepMeshFromCurve(crv)
+        crvShape = mc.listRelatives(crv, s = 1)[0]
+        hist = mc.listHistory(crvShape, future = True)
+        sweepShape = [s for s in hist if mc.objectType(s) == 'mesh' and 'sweep' in s.lower()][0]
+        sweepNode = [s for s in hist if mc.objectType(s) == 'sweepMeshCreator'][0]
+        mc.setAttr('%s.interpolationMode'%sweepNode, 0)
+        mc.setAttr('%s.interpolationOptimize'%sweepNode, 1)
+        mc.setAttr('%s.capsEnable'%sweepNode, 1)
+        mc.setAttr('%s.alignProfileEnable'%sweepNode, 1)
+        mc.setAttr('%s.alignProfileVertical'%sweepNode, 2)
+        
+        sweepTrans = mc.listRelatives(sweepShape, p = 1)[0]
+        mc.xform(sweepTrans, cp = True)
+        
+        if mc.objExists(widthCtrl):
+            mc.connectAttr('%s.outValue'%widthCtrl, '%s.scaleProfileX'%sweepNode, f = 1)
+        
+        sweepTrans = rename_individual(sweepTrans, meshName)
+        mc.parent(sweepTrans, mesh_g)
+        
+        if profile:
+            profileShape = mc.listRelatives(profile, s = 1)[0]
+            prNode = mc.createNode('sweepProfileConverter', n = '%s_profNode'%meshName)
+            mc.connectAttr('%s.worldMatrix[0]'%profileShape, '%s.inObjectArray[0].worldMatrix'%prNode, f = 1)
+            mc.connectAttr('%s.local'%profileShape, '%s.inObjectArray[0].curve'%prNode, f = 1)
+            mc.connectAttr('%s.sweepProfileData'%prNode, '%s.customSweepProfileData'%sweepNode, f = 1)
+        out.append(sweepNode)
+    
+    mc.select(out)
+    mc.undoInfo(cck = True)
+    
+def rmh_combineMeshes_diff(objs = None, cname = None):
+    if not objs:
+        objs = mc.ls(sl = True)
+    if not cname:
+        cname = objs[0]+'_cbool'
+    pBool = mc.createNode('polyCBoolOp', n = '%s_bool'%cname)
+    mc.setAttr('%s.operation'%pBool, 2)
+    mc.setAttr('%s.classification'%pBool, 1)
+    mesh = mc.createNode('mesh')
+    meshTrans = mc.listRelatives(mesh, p = 1)[0]
+    for i, obj in enumerate(objs):
+        sh = mc.listRelatives(obj, s = 1)
+        if not sh:
+            continue
+        sh = sh[0]
+        mc.connectAttr('%s.worldMatrix[0]'%sh, '%s.inputMat[%d]'%(pBool,i), f = 1)
+        mc.connectAttr('%s.outMesh'%sh, '%s.inputPoly[%d]'%(pBool,i), f = 1)
+    mc.connectAttr('%s.output'%pBool, '%s.inMesh'%(mesh), f = 1)
+    meshTrans = rename_individual(meshTrans, cname)
+    return meshTrans
     

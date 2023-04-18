@@ -121,6 +121,9 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
                                             ['matchCurveShape', rmhRobotTools.matchCurveShape]], \
                                             label = 'OneMessage Robo', cols = 1, spacing = 2)
         
+        summitLayout = pw.createButtonList([['createSweepMeshes', rmm.RMHSummit_createSweepMeshes],['combineMeshes_diff', rmm.rmh_combineMeshes_diff]], \
+                                            label = 'Summit 23', cols = 2, spacing = 2)
+        
         # exportSetButtons = pw.createButtonList([['create set', rrt.rmh_createExportSet],['add to set', rrt.rmh_addToExportSet]], \
         #                                     label = 'Export Set', cols = 2, spacing= 2)   
         
@@ -130,7 +133,7 @@ class RmhTools(MayaQWidgetDockableMixin, QDialog):
         # 
         # bencardLayout = pw.makeBoxLayout([nukeButtons,QWidget()],stretchArray = [0,1], alsWidget = True)
         
-        projectsLayout = pw.makeBoxLayout([bwFachButtons,bwInfButtons, nukeButtons,afxButtons, roentgenLayout, roboLayout, QWidget()],stretchArray = [0,0,0,0,0,0,1], alsWidget = True)
+        projectsLayout = pw.makeBoxLayout([bwFachButtons,bwInfButtons, nukeButtons,afxButtons, roentgenLayout, roboLayout, summitLayout, QWidget()],stretchArray = [0,0,0,0,0,0,0,1], alsWidget = True)
         
         ############# mainTab
         self.mainTab = QTabWidget()
