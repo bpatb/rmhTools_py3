@@ -160,5 +160,37 @@ def renameDuplicates():
         return "No Duplicates"
     
 
+def rmh_createMultipleDomeLights(imgPaths = None):
+    if not imgPaths:
+        imgPaths = mc.fileDialog2(fm = 4, cap = 'createMultipleDomeLights - choose hdr files')
+        if imgPaths:
+            print(imgPaths)
+        else:
+            return
     
+    mc.undoInfo(ock = True)
+    newLights = []
+    for i, imgPath in enumerate(imgPaths):
+        name = os.path.basename(imgPath).split('.')[0]
+        domeShape = mc.createNode('RedshiftDomeLight')
+        domeTrans = mc.listRelatives(domeShape, p = 1)[0]
+        newLights.append(domeTrans)
+        mc.setAttr('%s.tex0'%domeShape, imgPath, type = 'string')
+        mc.rename(domeTrans, 'dome_%s'%(name))
+        # mc.rename(domeShape, 'domeLight_%02dShape'%i)
     
+    rmh_linkSelectedLightsToAll(newLights)
+    
+    mc.undoInfo(cck = True)
+    
+def rmh_linkSelectedLightsToAll(lights = None, objs = None):
+    if not lights:
+        lights = mc.ls(sl = True)
+    if not objs:
+        objs = mc.ls(type = 'mesh')
+        
+    shs = [mc.listRelatives(light, s =1)[0] for light in lights]
+    mc.lightlink( light=shs, object=objs)
+    
+        
+        
