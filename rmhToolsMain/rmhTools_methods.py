@@ -192,5 +192,66 @@ def rmh_linkSelectedLightsToAll(lights = None, objs = None):
     shs = [mc.listRelatives(light, s =1)[0] for light in lights]
     mc.lightlink( light=shs, object=objs)
     
-        
-        
+
+def rmh_convertRedshiftLights():
+    # Get selected transform nodes in the scene
+    selected_transforms = mc.ls(selection=True, transforms=True)
+
+    # Filter out transforms that have RedshiftPhysicalLight shape nodes
+    redshift_lights = [trans for trans in selected_transforms if mc.listRelatives(trans, shapes=True, type='RedshiftPhysicalLight')]
+    
+    mc.undoInfo(ock = True)
+    for light in redshift_lights:
+        # Get the shape node
+        shape_node = mc.listRelatives(light, shapes=True, type='RedshiftPhysicalLight')[0]
+
+        # Get the light type of the RedshiftPhysicalLight
+        light_type = mc.getAttr(shape_node + '.lightType')
+
+        # Create a new Maya light based on the light type
+        # 0 - point, 1 - directional, 2 - spot, 3 - area, 4 - photometric, 5 - infinite
+        if light_type == 0:
+            new_light = mc.pointLight()
+        elif light_type == 1:
+            new_light = mc.directionalLight()
+        elif light_type == 2:
+            new_light = mc.spotLight()
+        elif light_type == 3:
+            new_light = mc.areaLight()
+        else:
+            print("Unsupported Redshift light type: {}".format(light_type))
+            continue
+
+        new_light_transform = mc.listRelatives(new_light, parent=True)[0]
+
+        p = mc.parentConstraint(light, new_light_transform, mo = False)
+        mc.delete(p)
+        # Transfer specific light attributes
+        attributes = ['intensity', 'colorR', 'colorG', 'colorB']
+
+        for attr in attributes:
+            try:
+                val = mc.getAttr(shape_node + '.' + attr)
+                mc.setAttr(new_light + '.' + attr, *val)
+            except:
+                print("Failed to transfer attribute: {}".format(attr))
+
+        mc.hide(light)
+
+    mc.undoInfo(cck = True)
+    print("Redshift lights conversion completed.")
+    
+    
+def RMH_setResolution():
+    result = mc.confirmDialog(title='RS_setResolution',message='resolution:',button=['6710x4772','1810x1280','1728x720','1280x1024','1024x1280','1440x1080','1920x804','1920x1080', '1998x1080', 'Cancel'],\
+                              defaultButton='OK',cancelButton='Cancel', dismissString='Cancel')
+    if result == 'Cancel':
+        return
+    width, height = list(map(int, result.split('x')))
+    
+    mc.setAttr('defaultResolution.width', width)
+    mc.setAttr('defaultResolution.height', height)
+    mc.setAttr('defaultResolution.deviceAspectRatio', float(width) / height)
+     
+    
+    

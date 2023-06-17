@@ -933,6 +933,21 @@ def BWInf_createSweepMeshes(crvs = None, attachCvTrans = True):
     
     mc.undoInfo(cck = True)
     
+def BWInf_connectConnectionsToSourceScale(cons = None):
+    if not cons:
+        cons = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    for con in cons:
+        if not 'srcObj' in mc.listAttr(con):
+            continue
+        srcObj = mc.listConnections('%s.srcObj'%con, s = 1, d = 0)[0]
+        _scons = mc.listConnections('%s.scaleX'%con, s = 1, d = 0)
+        if not _scons:
+            mc.connectAttr('%s.scaleX'%srcObj,'%s.scaleX'%con)
+            mc.connectAttr('%s.scaleZ'%srcObj,'%s.scaleZ'%con)
+    
+    mc.undoInfo(cck = True)
     
 class ModelPanelWrapper(QWidget):
     def __init__(self, parent = None, name = "customModelPanel#", label="caveCam01", cam='caveCam01', mbv = False, aspect_ratio = [1,1]):
