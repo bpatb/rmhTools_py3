@@ -948,6 +948,76 @@ def BWInf_connectConnectionsToSourceScale(cons = None):
             mc.connectAttr('%s.scaleZ'%srcObj,'%s.scaleZ'%con)
     
     mc.undoInfo(cck = True)
+
+def BWInf_reconnectLocatorsToMash(locs = None):
+    if not locs:
+        locs = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    
+    for loc in locs:
+        if not 'rem_translate' in mc.listAttr(loc):
+            mc.warning('rem_translate attr not found in ', loc)
+            continue
+        
+        plugs = mc.listConnections('%s.rem_translate'%loc, s = 1, d = 0, p = 1)
+        if not plugs:
+            mc.warning('rem_translate has not connections in ', loc)
+            continue
+        breakoutPlug_trans = plugs[0]
+        breakoutPlug_rot = plugs[0].replace('.translate', '.rotate')
+        breakoutPlug_scale = plugs[0].replace('.translate', '.scale')
+        
+        for attr in ['translate','translateX','translateY','translateZ','rotate','rotateX','rotateY', 'rotateZ', 'scale', 'scaleX', 'scaleY', 'scaleZ']:
+            cons = mc.listConnections('%s.%s'%(loc,attr), s = 1, d = 0)
+            if cons and 'animcurve' in mc.objectType(cons[0]).lower():
+                mc.delete(cons)
+        
+        mc.connectAttr(breakoutPlug_trans, '%s.translate'%loc, f = 1)
+        mc.connectAttr(breakoutPlug_rot, '%s.rotate'%loc, f = 1)
+        mc.connectAttr(breakoutPlug_scale, '%s.scale'%loc, f = 1)
+        
+    mc.undoInfo(cck = True)
+
+def BWInf_addTextScaleOffsetToMash(mashes = None):
+    import MASH.api as mapi
+    if not mashes:
+        mashes = mc.ls(sl = True)
+        tmp = []
+        for mash in mashes:
+            if '_Repro' in mash:
+                t = '_'.join(mash.split('_')[:-1])
+                tmp.append(t)
+            elif mc.objectType(mash) == 'MASH_Waiter':
+                tmp.append(mash)
+        mashes = tmp
+    
+    mc.undoInfo(ock = True)
+    
+    ctrlNode = 'offsetCtrl'
+    if not mc.objExists(ctrlNode):
+        mc.spaceLocator(n = ctrlNode)
+    
+    stdVals = {'mashOffsetNegScale':-10}
+    for attr in ['mashOffsetNegScale', 'randEnvelope']:
+        if not attr in mc.listAttr(ctrlNode):
+            mc.addAttr(ctrlNode, ln = attr , at = 'double', dv = stdVals.get(attr,0), k = 1)
+            
+    
+    for i,mash in enumerate(mashes):
+        mashNetwork = mapi.Network(mash)
+        sig = mashNetwork.addNode("MASH_Offset")
+        
+        mc.connectAttr('%s.scaleOffset0'%sig.name, '%s.scaleOffset1'%sig.name)
+        mc.connectAttr('%s.scaleOffset0'%sig.name, '%s.scaleOffset2'%sig.name)
+        mc.connectAttr('%s.mashOffsetNegScale'%(ctrlNode), '%s.scaleOffset0'%sig.name)
+        mc.connectAttr('%s.randEnvelope'%(ctrlNode), '%s.randEnvelope'%sig.name)
+        mc.setAttr('%s.enablePosition'%sig.name, 0)
+        mc.setAttr('%s.enableRotation'%sig.name, 0)
+    
+    mc.undoInfo(cck = True)
+    
+    
     
 class ModelPanelWrapper(QWidget):
     def __init__(self, parent = None, name = "customModelPanel#", label="caveCam01", cam='caveCam01', mbv = False, aspect_ratio = [1,1]):

@@ -241,7 +241,49 @@ def rmh_convertRedshiftLights():
     mc.undoInfo(cck = True)
     print("Redshift lights conversion completed.")
     
+def rmh_importImagesAsMaterials(imgPaths = None, setName = 'droppedMaterialSet'):
+    import PatsMayaMethods2 as pmm
+    if not imgPaths:
+        imgPaths = mc.fileDialog2(fm = 4, cap = 'rmh_importImagesAsMaterials')
+        if not imgPaths:
+            return
     
+    mc.undoInfo(ock = True)
+    
+    if not mc.objExists(setName):
+        mc.sets(name = setName, em = True)
+    
+    for imgPath in imgPaths:
+        basename = os.path.basename(imgPath)
+        basename = basename.split('.')[0]
+        if len(basename) > 15:
+            basename = basename[:8] + '_' + basename[-3:]
+        matName = '%s_Mat'%basename
+        if mc.objExists(matName):
+            print('%s exists'%matName)
+            continue
+        sg, mat = pmm.createShader(shaderType = 'surfaceShader', assignToObjs = None, name = matName, colInput = imgPath, skipExisting = True, connectTransparency = False)
+        mc.sets(mat, addElement = setName, e = True)
+        
+    mc.undoInfo(cck = True)
+
+def rmh_multiAssignMaterialsToObjects(objs = None, mats = None):
+    import PatsMayaMethods2 as pmm
+    if not objs or not mats:
+        sel = mc.ls(sl = True)
+        objs = [o for o in sel if mc.objectType(o) == 'transform']
+        mats = [o for o in sel if mc.objectType(o) != 'transform']
+    
+    mc.undoInfo(ock = True)
+    
+    for i,obj in enumerate(objs):
+        if len(mats) <= i:
+            break
+        mat = mats[i]
+        pmm.assignMaterial(mat, [obj])
+    
+    mc.undoInfo(cck = True)
+
 def RMH_setResolution():
     result = mc.confirmDialog(title='RS_setResolution',message='resolution:',button=['6710x4772','1810x1280','1728x720','1280x1024','1024x1280','1440x1080','1920x804','1920x1080', '1998x1080', 'Cancel'],\
                               defaultButton='OK',cancelButton='Cancel', dismissString='Cancel')
@@ -254,4 +296,51 @@ def RMH_setResolution():
     mc.setAttr('defaultResolution.deviceAspectRatio', float(width) / height)
      
     
+def rmh_afterCurveLoft_create(crvs = None, tangentType = 'linear', frameRange = None, animLength = 20, nthFrame = 5):
+    import curveMorpher
+    reload(curveMorpher)
+    import PatsMayaMethods2 as pmm
     
+    if not crvs:
+        crvs = mc.ls(sl = True)
+    
+    frameRange = [1,50]
+    mainCrv = crvs[0]
+    targetCrvs = crvs[1:]
+    
+    print('targetss', targetCrvs)
+    mc.undoInfo(ock = True)
+    
+    mainGrp =  pmm.createGroupIfNonExistent('crvLftAnim_g', hide = False)
+    dupGrp = pmm.createGroupIfNonExistent('crvLft_frameCrvs', parent = mainGrp, hide = True, relativeGroup = False)
+    
+    animCrvGrp = mc.group(em = True)
+    animCrvGrp = pmm.rename_individual(animCrvGrp, 'loftAnimCrv_grp')
+    mc.parent(animCrvGrp, mainGrp)
+    
+    
+    out = []
+    for frame in range(frameRange[0],frameRange[1], nthFrame):
+        mc.currentTime(frame)
+        dup = mc.duplicate(mainCrv)[0]
+        dup = pmm.rename_individual(dup, '%s_frame%03d'%(mainCrv, frame))
+        mc.parent(dup, dupGrp)
+        outDc = curveMorpher.morphCurves_createInbetweens_viaLoft(crvs = [dup] + targetCrvs, numTweens = 1, autoReverse = True, degree = 3, sortByDist = False, groupTo = animCrvGrp)
+        srf, outCrv = outDc['loftSrf'],outDc['outCrvs'][0]
+        
+        mc.rebuildSurface(srf, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0, kc=0, su=0, du=3, sv=0, dv=3, tol=0.01, fr=0, dir=2)
+
+        out.append(outCrv)
+        
+        mc.setKeyframe('%s.uVal'%outCrv, t = frame, v = 0, itt = tangentType, ott = tangentType)
+        mc.setKeyframe('%s.uVal'%outCrv, t = frame + animLength, v = 1, itt = tangentType, ott = tangentType)
+        mc.setKeyframe('%s.v'%outCrv, t = frame-1 , v = 0)
+        mc.setKeyframe('%s.v'%outCrv, t = frame, v = 1)
+        mc.setKeyframe('%s.v'%outCrv, t = frame+animLength , v = 1)
+        mc.setKeyframe('%s.v'%outCrv, t = frame+animLength+1, v = 0)
+
+    mc.undoInfo(cck = True)
+    
+
+
+
