@@ -918,4 +918,41 @@ def rmh_combineMeshes_diff(objs = None, cname = None):
     mc.connectAttr('%s.output'%pBool, '%s.inMesh'%(mesh), f = 1)
     meshTrans = rename_individual(meshTrans, cname)
     return meshTrans
+
+def rmh_getShadingGroup(obj = None, select = False, returnAllSgs = False):
+    if not obj:
+        obj = mc.ls(sl = True)[0]
+    if mc.objectType(obj) == 'transform':
+        shape = mc.listRelatives(obj, s = True, f = True)
+        if not shape:
+            return
+        sg = mc.listConnections(shape[0], type = 'shadingEngine')
+        if not sg:
+            return
+        if select:
+            getObjects_SG(sg[0], select = True)
+        if returnAllSgs:
+            return list(set(sg))
+        else:
+            return sg[0]
+    else:
+        #elif 'vray' in mc.objectType(obj).lower() or 'lambert' in mc.objectType(obj).lower() or 'blinn' in mc.objectType(obj).lower() or 'sur' in mc.objectType(obj).lower():
+        sg = mc.listConnections(obj, type = 'shadingEngine')
+        return sg if not type(sg) == list else sg[0] 
+
+
+
+def rmh_getMaterial(obj = None, returnAllMaterials = False):
+    if not obj:
+        obj = mc.ls(sl = True)[0]
+    sgs = rmh_getShadingGroup(obj, returnAllSgs = True)
+    if not sgs:
+        return False
+    if returnAllMaterials:
+        out = []
+        for _sg in sgs:
+            out.append(mc.listConnections('%s.surfaceShader'%(_sg))[0])
+        return out
+    else:
+        return mc.listConnections('%s.surfaceShader'%(sgs[0]))[0]
     

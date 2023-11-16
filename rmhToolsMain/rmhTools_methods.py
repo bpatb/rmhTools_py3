@@ -3,11 +3,13 @@ from __future__ import print_function
 import maya.cmds as mc
 import maya.mel as mel
 
+
 from importlib import reload
 import random, pickle, os
 import __main__
 
 import rmhTools_widgets as pw
+import rmhMayaMethods as rmm
 import six
 
 try:
@@ -342,5 +344,18 @@ def rmh_afterCurveLoft_create(crvs = None, tangentType = 'linear', frameRange = 
     mc.undoInfo(cck = True)
     
 
+def rmh_addObjectTransparencyControl_SS():
+    objs = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    for obj in objs:
+        if not 'matTransparency' in mc.listAttr(obj):
+            mc.addAttr(obj, ln = 'matTransparency', at = 'double', dv = 0, minValue = 0, maxValue = 1, k = 1)
+        mat = rmm.rmh_getMaterial(obj)
+        if 'outTransparency' in mc.listAttr(mat):
+            mc.connectAttr('%s.matTransparency'%obj , '%s.outTransparencyR'%mat, f = 1)
+            mc.connectAttr('%s.matTransparency'%obj , '%s.outTransparencyG'%mat, f = 1)
+            mc.connectAttr('%s.matTransparency'%obj , '%s.outTransparencyB'%mat, f = 1)
+            print ('connected %s to %s'%(obj, mat))
 
-
+    mc.undoInfo(cck = True)
