@@ -24,6 +24,7 @@ import maya.mel as mel
 
 import rmhTools_methods as rtm
 reload(rtm)
+import rmhMayaMethods as rmm
 
 
 displayLayerPostfix = '_DL'
@@ -395,7 +396,36 @@ def vai_initialize(name = None):
     
 
 def vai_selectNonRedshiftMaterials():
-    pass
+    objs_allTrans = mc.ls(type = 'transform')
+    objs_allTrans = mc.ls(objs_allTrans, v = True)
+    
+    out = []
+    for obj in objs_allTrans:
+        sh = mc.listRelatives(obj, s = 1)
+        if sh and mc.objectType(sh[0]) == 'mesh':
+            mat = rmm.rmh_getMaterial(obj)
+            if mat and 'redshift' not in mc.objectType(mat).lower():
+                out.append(obj)
+    
+    mc.select(out)
+    return out
+
+def vai_selectObjectsWithNoMaterial():
+    objs_allTrans = mc.ls(type = 'transform')
+    objs_allTrans = mc.ls(objs_allTrans, v = True)
+    
+    out = []
+    for obj in objs_allTrans:
+        sh = mc.listRelatives(obj, s = 1)
+        if sh and mc.objectType(sh[0]) == 'mesh':
+            mat = rmm.rmh_getMaterial(obj)
+            if not mat:
+                out.append(obj)
+    
+    mc.select(out)
+    return out
+
+
 
 def vai_selectByArea(objs = None, minVal = None, maxVal = None):
     if not objs:

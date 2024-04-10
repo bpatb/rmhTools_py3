@@ -956,3 +956,52 @@ def rmh_getMaterial(obj = None, returnAllMaterials = False):
     else:
         return mc.listConnections('%s.surfaceShader'%(sgs[0]))[0]
     
+    
+def rmh_makeBlendshapeProgressControl(objs = None, attrName = 'blendShapeProgress', additive = True, func = 'linstep'):
+    if not objs:
+        objs = mc.ls(sl = True)
+    
+    mc.undoInfo(ock = True)
+    
+    for obj in objs:
+        if not attrName in mc.listAttr(obj):
+            mc.addAttr(obj, ln = attrName, at = 'double', minValue = 0, dv = 0, k = 1)
+        overlapAttr = '%s_overlap'%attrName
+        if not overlapAttr in mc.listAttr(obj):
+            mc.addAttr(obj, ln = overlapAttr, at = 'double', minValue = 0, maxValue = 1, dv = 0, k = 1)
+            
+        expName = '%s_bsProgress'%obj
+        if mc.objExists(expName):
+            mc.delete(expName)
+        
+        res = mc.listHistory(obj)
+        res = mc.ls(res, type = 'blendShape')
+        if not res:
+            print(obj, 'has no blendshape')
+            continue
+        blendShape = res[0]
+        weightAttrs = mc.listAttr(blendShape + '.w', multi=True)
+        
+        if not weightAttrs:
+            print(obj, 'has no weight attrs')
+            continue
+        
+        progPlug = '%s.%s'%(obj, attrName)
+        overPlug = '%s.%s'%(obj, overlapAttr)
+        exp = []
+        for i,w in enumerate(weightAttrs):
+            plug = '%s.%s'%(blendShape, w)
+            if additive:
+                exp.append(f'{plug} = {func}({i} - {overPlug},{i+1} + {overPlug}, {progPlug});')
+            else:
+                exp.append(f'{plug} = {func}({i} - {overPlug},{i+1} + {overPlug}, {progPlug}) - {func}({i+1} - {overPlug},{i+2} + {overPlug}, {progPlug});')
+            
+        mc.expression(s = '\n'.join(exp), n = expName)
+        
+    mc.undoInfo(cck = True)
+    
+    
+    
+    
+    
+    
