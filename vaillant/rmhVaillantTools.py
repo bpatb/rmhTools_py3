@@ -395,7 +395,7 @@ def vai_initialize(name = None):
     print('done.')
     
 
-def vai_selectNonRedshiftMaterials():
+def vai_selectNonRedshiftMaterials(onlyVisible = True):
     objs_allTrans = mc.ls(type = 'transform')
     objs_allTrans = mc.ls(objs_allTrans, v = True)
     
@@ -405,7 +405,11 @@ def vai_selectNonRedshiftMaterials():
         if sh and mc.objectType(sh[0]) == 'mesh':
             mat = rmm.rmh_getMaterial(obj)
             if mat and 'redshift' not in mc.objectType(mat).lower():
-                out.append(obj)
+                if onlyVisible:
+                    if rmm.checkIfVisible(obj):
+                        out.append(obj)
+                else:
+                    out.append(obj)
     
     mc.select(out)
     return out

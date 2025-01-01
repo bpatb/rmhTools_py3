@@ -28,6 +28,51 @@ import __main__
 import rmhTools_widgets as pw
 
 
+def checkIfVisible(obj = None):
+    if not obj:
+        obj = mc.ls(sl = True, long = True)[0]
+        if not obj:
+            return
+    if not mc.objExists(obj):
+        return False
+    
+    if not mc.attributeQuery('visibility', node = obj, exists = True):
+        return False
+    if not mc.getAttr('%s.visibility'%obj):
+        return False
+    if mc.attributeQuery('intermediateObject', node = obj, exists = True) and mc.getAttr('%s.intermediateObject'%obj):
+        return False
+    if mc.attributeQuery('overrideEnabled', node = obj, exists = True) and mc.getAttr('%s.overrideEnabled'%obj) and not mc.getAttr('%s.overrideVisibility'%obj):
+        return False
+    parent = mc.listRelatives(obj, p = True, f = True)
+    vis = True
+    parentRenderLayer = []
+    while parent:
+        if parent:
+            parent = parent[0]
+            vis = vis and mc.getAttr('%s.visibility'%parent)
+            rLayer = mc.listConnections(parent, type = 'renderLayer') or []
+            parentRenderLayer = parentRenderLayer + rLayer
+        parent = mc.listRelatives(parent, p = True, f =True)
+    if not vis:
+        return False
+    
+    currentLayer= mc.editRenderLayerGlobals(q=True, currentRenderLayer= True)
+    if  currentLayer != 'defaultRenderLayer':
+        shape = mc.listRelatives(obj, s = True, f = True)
+        shapeRL = []
+        if shape:
+            shapeRL = mc.listConnections(shape[0], type = 'renderLayer') or []
+        rLayer = mc.listConnections(obj, type = 'renderLayer') or []
+        #print 'check', parentRenderLayer+shapeRL+rLayer, currentLayer
+        if currentLayer in parentRenderLayer+shapeRL+rLayer:
+            return True
+        else:
+            return False
+        
+    return True
+
+
 def setCurveColor(crvs = None, col = [1,1,0], rememberPrevious = 1): ### assume 255 col range
     if not crvs:
         crvs = mc.ls(sl = True)
