@@ -2,7 +2,6 @@ from __future__ import absolute_import
 import maya.cmds as mc
 import maya.mel as mel
 import random, os, pickle, subprocess, __main__, shutil
-from six.moves import range
 from importlib import reload
 
 try:
@@ -10,11 +9,13 @@ try:
     from PySide2.QtCore import *
     from PySide2.QtWidgets import *
     from shiboken2 import wrapInstance
-except:
-    from PySide.QtGui import *
-    from PySide.QtCore import *
-    from shiboken import wrapInstance
-
+    from PySide2.QtCore import Signal as pyqtSignal
+except ImportError:
+    from PySide6.QtGui import *
+    from PySide6.QtCore import *
+    from PySide6.QtWidgets import *
+    from PySide6.QtCore import Signal as pyqtSignal
+    from shiboken6 import wrapInstance
 
 
 

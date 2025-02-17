@@ -10,10 +10,13 @@ try:
     from PySide2.QtCore import *
     from PySide2.QtWidgets import *
     from shiboken2 import wrapInstance
-except:
-    from PySide.QtGui import *
-    from PySide.QtCore import *
-    from shiboken import wrapInstance
+    from PySide2.QtCore import Signal as pyqtSignal
+except ImportError:
+    from PySide6.QtGui import *
+    from PySide6.QtCore import *
+    from PySide6.QtWidgets import *
+    from PySide6.QtCore import Signal as pyqtSignal
+    from shiboken6 import wrapInstance
 
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin, MayaQDockWidget
 import maya.api.OpenMayaUI  as omui

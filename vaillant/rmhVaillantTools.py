@@ -10,10 +10,14 @@ try:
     from PySide2.QtCore import *
     from PySide2.QtWidgets import *
     from shiboken2 import wrapInstance
-except:
-    from PySide.QtGui import *
-    from PySide.QtCore import *
-    from shiboken import wrapInstance
+    from PySide2.QtCore import Signal as pyqtSignal
+except ImportError:
+    from PySide6.QtGui import *
+    from PySide6.QtCore import *
+    from PySide6.QtWidgets import *
+    from PySide6.QtCore import Signal as pyqtSignal
+    from shiboken6 import wrapInstance
+
 
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin, MayaQDockWidget
 import maya.api.OpenMayaUI  as omui
@@ -70,10 +74,15 @@ def vai_setupRenderer(w = 4252, h = 5669):
     mc.setAttr('redshiftOptions.imageFormat', 1)
     mc.setAttr('redshiftOptions.exrForceMultilayer', 1)
     mc.setAttr('defaultRenderGlobals.imageFilePrefix', '<Scene>/<Scene>_<RenderLayer>', type = 'string')
-    mc.setAttr('defaultResolution.width', w)
-    mc.setAttr('defaultResolution.height', h)
-    mc.setAttr('defaultResolution.pixelAspect', 1)
-    mc.setAttr('defaultResolution.deviceAspectRatio', float(w) / h)
+    w = 4252
+    h = 5669
+    try:
+        mc.setAttr('defaultResolution.width', w)
+        mc.setAttr('defaultResolution.height', h)
+        mc.setAttr('defaultResolution.pixelAspect', 1)
+        mc.setAttr('defaultResolution.deviceAspectRatio', float(w) / h)
+    except:
+        mc.warning('vai_setupRenderer: couldnt set render size!!!')
     try:
         mel.eval('setTestResolutionVar(3);')
     except:
@@ -483,4 +492,22 @@ def vai_selectSimilarObjects(objs = None, thresh = 0.1):
                 
     mc.select(out)
         
+
+def vai_findMultipleShapes():
+    transforms = cmds.ls(type="transform")
+    transforms_with_multiple_shapes = []
+
+    for transform in transforms:
+        shapes = cmds.listRelatives(transform, shapes=True, fullPath=True) or []
+        
+        if len(shapes) > 1:
+            transforms_with_multiple_shapes.append(transform)
+
+    if transforms_with_multiple_shapes:
+        cmds.select(transforms_with_multiple_shapes)
+        print("Transforms with multiple shapes:", transforms_with_multiple_shapes)
+    else:
+        print("No transforms with multiple shapes found.")
+        cmds.select(clear=True)
+
 

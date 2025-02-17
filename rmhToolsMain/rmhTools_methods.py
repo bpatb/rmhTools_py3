@@ -10,24 +10,24 @@ import __main__
 
 import rmhTools_widgets as pw
 import rmhMayaMethods as rmm
-import six
 
 try:
     from PySide2.QtGui import *
     from PySide2.QtCore import *
     from PySide2.QtWidgets import *
     from shiboken2 import wrapInstance
-    # print "Using PySide2"
-except:
-    from PySide.QtGui import *
-    from PySide.QtCore import *
-    from shiboken import wrapInstance
-    # print "Using PySide"
-    
+    from PySide2.QtCore import Signal as pyqtSignal
+except ImportError:
+    from PySide6.QtGui import *
+    from PySide6.QtCore import *
+    from PySide6.QtWidgets import *
+    from PySide6.QtCore import Signal as pyqtSignal
+    from shiboken6 import wrapInstance
+
 def returnMeshesInHierarchy(grps = None, select = False):
     if not grps:
         grps = mc.ls(sl = True)
-    grps = [grps] if type(grps) in [str,six.text_type] else grps
+    grps = [grps] if type(grps) in [str] else grps
     mc.undoInfo(ock = True)
     out = []
     for grp in grps:

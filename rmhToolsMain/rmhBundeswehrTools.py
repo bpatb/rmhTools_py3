@@ -1,19 +1,19 @@
 # -*- coding: iso-8859-1 -*-
 from __future__ import absolute_import
-import six
 from importlib import reload
+
 try:
     from PySide2.QtGui import *
     from PySide2.QtCore import *
     from PySide2.QtWidgets import *
     from shiboken2 import wrapInstance
-    import shiboken2
-    # print "Using PySide2"
-except:
-    from PySide.QtGui import *
-    from PySide.QtCore import *
-    from shiboken import wrapInstance
-    # print "Using PySide"
+    from PySide2.QtCore import Signal as pyqtSignal
+except ImportError:
+    from PySide6.QtGui import *
+    from PySide6.QtCore import *
+    from PySide6.QtWidgets import *
+    from PySide6.QtCore import Signal as pyqtSignal
+    from shiboken6 import wrapInstance
 
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin, MayaQDockWidget
 
@@ -305,7 +305,7 @@ def BWInf_setOptsByType(obj, opts):
         val = opts[key]
         if not key in mc.listAttr(obj):
             continue
-        if type(val) in [str,six.text_type]:
+        if type(val) in [str]:
             mc.setAttr('%s.%s'%(obj, key), val, type = 'string')
         else:
             mc.setAttr('%s.%s'%(obj, key), val)

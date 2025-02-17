@@ -1,10 +1,9 @@
 # import os, subprocess, threading, math, random,re,shutil
 from __future__ import absolute_import
 import os, subprocess, threading, math, random,shutil
-from six.moves import map
-import six
+# from six.moves import map
 from importlib import reload
-from six.moves import range
+# from six.moves import range
 
 try:
     from PySide2.QtGui import *
@@ -12,13 +11,13 @@ try:
     from PySide2.QtWidgets import *
     from shiboken2 import wrapInstance
     from PySide2.QtCore import Signal as pyqtSignal
-except:
-    from PySide.QtGui import *
-    from PySide.QtCore import *
-    from shiboken import wrapInstance
-    from PySide.QtCore import Signal as pyqtSignal
-    
-    
+except ImportError:
+    from PySide6.QtGui import *
+    from PySide6.QtCore import *
+    from PySide6.QtWidgets import *
+    from PySide6.QtCore import Signal as pyqtSignal
+    from shiboken6 import wrapInstance
+
 def createButtonList(butLabelsAndProcs = [[],[]], spacing = 0, margin = 0, label = 'Morph', cols = None):
     if not cols:
         buts = []
@@ -35,7 +34,10 @@ def createButtonList(butLabelsAndProcs = [[],[]], spacing = 0, margin = 0, label
         butLayout = makeBoxLayout([QLabel(label)] + buts, spacing = spacing, margin = margin)
     else:
         gridLayout = QGridLayout()
-        gridLayout.setMargin(0)
+        try:
+            gridLayout.setMargin(0)
+        except:
+            gridLayout.setContentsMargins(0,0,0,0)
         gridLayout.setSpacing(0)
         
         count = 0
@@ -113,7 +115,7 @@ def makeBoxLayout(widgetArray, vertical = True, alsWidget = False, margin = None
         return layout
 
 def splitPath(path, ohnePunkt = True): #dirName, fName, base, ext
-    path = six.text_type(path).replace('\\','/').replace('//','/')
+    path = str(path).replace('\\','/').replace('//','/')
     fName = path.split('/')[-1]
     dirName = os.path.dirname(path).replace('\\','/').replace('//','/')
     base, ext = os.path.splitext(fName)
@@ -213,7 +215,7 @@ class FloatLabelSpin(QWidget):
         self.spin.setValue(spinVal)
 
 class MediaListWidget(QListWidget):
-    pathChange = pyqtSignal(six.text_type)
+    pathChange = pyqtSignal(str)
     def __init__(self, exts = None, parent = None):
         super(MediaListWidget, self).__init__(parent)
         self.exts = exts or ['*.jpg','*.jpeg','*.avi','*.png','*.3gp','*.bmp'] 
@@ -355,7 +357,7 @@ class MediaListWidget(QListWidget):
         return False
         
 class DirListWidget(QListWidget):
-    pathChange = pyqtSignal(six.text_type)
+    pathChange = pyqtSignal(str)
     def __init__(self, exts = None, parent = None):
         super(DirListWidget, self).__init__(parent)
         self.exts = exts or ['*.jpg','*.jpeg','*.avi','*.png','*.3gp','*.bmp']

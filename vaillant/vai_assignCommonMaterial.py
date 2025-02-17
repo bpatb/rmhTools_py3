@@ -5,17 +5,19 @@ from __future__ import print_function
 import maya.cmds as mc
 from importlib import reload
 import rmhTools_widgets as pw
+
 try:
     from PySide2.QtGui import *
     from PySide2.QtCore import *
     from PySide2.QtWidgets import *
     from shiboken2 import wrapInstance
     from PySide2.QtCore import Signal as pyqtSignal
-except:
-    from PySide.QtGui import *
-    from PySide.QtCore import *
-    from shiboken import wrapInstance
-    from PySide.QtCore import Signal as pyqtSignal
+except ImportError:
+    from PySide6.QtGui import *
+    from PySide6.QtCore import *
+    from PySide6.QtWidgets import *
+    from PySide6.QtCore import Signal as pyqtSignal
+    from shiboken6 import wrapInstance
 
 # def assignAOShader(objs = None, AOShaderName = 'AO_VRayMtl'):
 #     if not objs:

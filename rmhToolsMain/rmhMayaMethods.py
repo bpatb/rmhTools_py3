@@ -3,19 +3,19 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from importlib import reload
-from six.moves import map
-from six.moves import range
+
 try:
     from PySide2.QtGui import *
     from PySide2.QtCore import *
     from PySide2.QtWidgets import *
     from shiboken2 import wrapInstance
-    # print "Using PySide2"
-except:
-    from PySide.QtGui import *
-    from PySide.QtCore import *
-    from shiboken import wrapInstance
-    # print "Using PySide"
+    from PySide2.QtCore import Signal as pyqtSignal
+except ImportError:
+    from PySide6.QtGui import *
+    from PySide6.QtCore import *
+    from PySide6.QtWidgets import *
+    from PySide6.QtCore import Signal as pyqtSignal
+    from shiboken6 import wrapInstance
 
 import maya.cmds as mc
 import maya.mel as mel
