@@ -54,7 +54,7 @@ class VaillantTab(QWidget):
                                         ['Logo', vai.vai_logoDL],['Not Needed', vai.vai_notNeededDL]], label = '02. Assign DLs / groups', cols = 1)
         
         self.tools_layout = pw.createButtonList([['assign common material', acm.assignCommonShader_xray],['select non-Redshift materials', vai.vai_selectNonRedshiftMaterials],['selectObjectsWithNoMaterial', vai.vai_selectObjectsWithNoMaterial],\
-                                                    ['select similar sized', vai.vai_selectSimilarObjects]], label = '03. Assign Materials / Edit Geometry', cols = 1)
+                                                    ['select similar sized', vai.vai_selectSimilarObjects],['makeRevolveCut', rmm.makeRevolveCut]], label = '03. Assign Materials / Edit Geometry', cols = 1)
         
         self.renderSetup_layout = pw.createButtonList([['create RLs and passes', vai.vai_createRLPasses]], label = '04. Render Setup', cols = 1)
         

@@ -28,6 +28,57 @@ import __main__
 import rmhTools_widgets as pw
 
 
+def getBBPos(obj = None, achse = 'y', offset = 0): #getBBPos()
+    if not obj:
+        obj = mc.ls(selection = True)[0]
+    if achse == 'x':
+        bb = mc.xform(obj, q = True, bb = True)
+        return (bb[3] + offset,  bb[1] + (bb[4] - bb[1]) / 2, bb[2] + (bb[5]-bb[2]) / 2)
+    elif achse == 'y':
+        bb = mc.xform(obj, q = True, bb = True)
+        return (bb[0] + (bb[3] - bb[0]) / 2,  bb[4] + offset , bb[2] + (bb[5]-bb[2]) / 2)
+    elif achse == 'z':
+        bb = mc.xform(obj, q = True, bb = True)
+        return (bb[0] + (bb[3] - bb[0]) / 2,  bb[1] + (bb[4] - bb[1]) / 2, bb[5] + offset)
+    elif achse == '-x':
+        bb = mc.xform(obj, q = True, bb = True)
+        return (bb[0] + offset,  bb[1] + (bb[4] - bb[1]) / 2, bb[2] + (bb[5]-bb[2]) / 2)
+    elif achse == '-y':
+        bb = mc.xform(obj, q = True, bb = True)
+        return (bb[0] + (bb[3] - bb[0]) / 2,  bb[1] + offset , bb[2] + (bb[5]-bb[2]) / 2)
+    elif achse == '-z':
+        bb = mc.xform(obj, q = True, bb = True)
+        return (bb[0] + (bb[3] - bb[0]) / 2,  bb[1] + (bb[4] - bb[1]) / 2, bb[2] + offset)
+
+
+
+def makeRevolveCut():
+    crv = mc.ls(sl = True)[0]
+    mc.hide(mc.duplicate(crv, n = '%s_orig'%crv))
+    grp = mc.group(em = True, n = '%s_cutGrp'%crv)
+    revSrf, revNode = mc.revolve(crv, degree = 3, ax = (0,1,0), n = '%s_nurbsRevolve'%crv)
+    #revSrf = mc.rename(revSrf,'%s_nurbsRevolve'%crv)
+    tx,ty,tz = getBBPos(revSrf, achse = 'y', offset = 10)
+    ctrl = mc.circle( r = 20, d = 3, nr = (0,1,0), n = '%s_cutCtrl'%crv)[0]
+    mc.move(tx,ty,tz,ctrl)
+    mc.addAttr(ctrl, ln = 'sweep1', at = 'double', keyable = True)
+    mc.addAttr(ctrl, ln = 'sweep2', at = 'double', dv = 360, keyable = True)
+    mc.addAttr(ctrl, ln = 'uRes', at = 'double', dv = 55, keyable = True)
+    mc.addAttr(ctrl, ln = 'vRes', at = 'double', dv = 90, keyable = True)
+    mc.connectAttr('%s.sweep1'%ctrl, '%s.startSweep'%revNode, force = True)
+    mc.connectAttr('%s.sweep2'%ctrl, '%s.endSweep'%revNode, force = True)
+    
+    polyObj, polyTess = mc.nurbsToPoly(revSrf, n = '%s_polyCut'%crv, mnd = 1, ch = 1, f= 2, pt= 1, pc =200, chr= 0.9815, ft =0.01, mel= 0.001, d =0.0565, ut =1, un =77, vt =1, vn= 90, uch= 0, ucr= 0, cht= 0.01 ,es =0, ntr =0,mrt= 0, uss =1)
+    
+    mc.polyCloseBorder(polyObj)
+    
+    mc.connectAttr('%s.uRes'%ctrl, '%s.uNumber'%polyTess, force = True)
+    mc.connectAttr('%s.vRes'%ctrl, '%s.vNumber'%polyTess, force = True)
+    
+    mc.hide(revSrf)
+    mc.parent(crv, revSrf, ctrl,polyObj, grp)
+
+
 def checkIfVisible(obj = None):
     if not obj:
         obj = mc.ls(sl = True, long = True)[0]
